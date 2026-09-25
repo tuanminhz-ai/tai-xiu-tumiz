@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Tài Xỉu VIP Casino - Lắc 3 Xúc Xắc 3D 6 Mặt</title>
+  <title>NHÀ CÁI TUMIZ - Chơi Thật Hay, Thắng Liền Tay</title>
   <link rel="stylesheet" href="style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,13 +11,13 @@
 </head>
 <body>
   <div class="casino-app">
-    <!-- Header: Logo, User Account, Balance, Sound Toggle, Mode -->
+    <!-- Header: Logo, User Account, Balance, Actions -->
     <header class="header">
       <div class="brand">
-        <div class="brand-badge">VIP 999</div>
+        <div class="brand-badge">TUMIZ VIP</div>
         <div class="brand-title">
-          <h1>TÀI XỈU <span>CASINO</span></h1>
-          <p class="subtitle">≥ 11: TÀI | ≤ 10: XỈU</p>
+          <h1>NHÀ CÁI <span>TUMIZ</span></h1>
+          <p class="subtitle">Chơi thật hay, thắng liền tay | ≥ 11: TÀI | ≤ 10: XỈU</p>
         </div>
       </div>
 
@@ -25,7 +25,7 @@
       <div class="user-stats">
         <!-- Account Info Block -->
         <div class="account-block" id="accountBlock">
-          <div class="user-avatar-badge" id="btnUserMenu">
+          <div class="user-avatar-badge" id="btnUserMenu" title="Bấm để xem/đổi tài khoản">
             <span class="avatar-icon">👑</span>
             <div class="user-meta">
               <span class="user-name" id="displayUsername">Khách</span>
@@ -44,8 +44,14 @@
         </div>
 
         <div class="header-actions">
-          <button id="btnOpenDeposit" class="btn-action btn-gold btn-deposit-highlight" title="Nạp tiền qua chuyển khoản BIDV">
+          <button id="btnOpenDeposit" class="btn-action btn-gold btn-deposit-highlight" title="Nạp tiền chuyển khoản BIDV 8860252059">
             <span class="icon">💳</span> Nạp Tiền
+          </button>
+          <button id="btnOpenWithdraw" class="btn-action btn-withdraw" title="Rút tiền về tài khoản ngân hàng">
+            <span class="icon">💸</span> Rút Tiền
+          </button>
+          <button id="btnOpenAdmin" class="btn-action btn-admin-badge" title="Bảng quản trị duyệt nạp/rút & kiểm soát lạm phát">
+            <span class="icon">👑</span> Quản Trị
           </button>
           <button id="btnSound" class="btn-action btn-icon" title="Bật/Tắt âm thanh">
             <span id="soundIcon">🔊</span>
@@ -64,6 +70,7 @@
       <div class="session-bar">
         <div class="session-id">
           Phiên: <strong id="sessionId">#882910</strong>
+          <span class="counter-badge" id="roundCounterBadge" title="Chu kỳ 50 ván có 1 ván Bão">Ván: 1/50</span>
         </div>
         
         <div class="timer-display" id="timerBox">
@@ -92,44 +99,24 @@
             <div class="dice-scene" id="diceScene1">
               <div class="dice-shadow"></div>
               <div class="cube" id="dice1">
-                <!-- Mặt 1: 1 chấm đỏ to chính giữa -->
-                <div class="face front face-1">
-                  <span class="pip pip-1 red"></span>
-                </div>
-                <!-- Mặt 6: 2 cột x 3 chấm đen -->
+                <div class="face front face-1"><span class="pip pip-1 red"></span></div>
                 <div class="face back face-6">
-                  <span class="pip pip-1"></span>
-                  <span class="pip pip-2"></span>
-                  <span class="pip pip-3"></span>
-                  <span class="pip pip-4"></span>
-                  <span class="pip pip-5"></span>
-                  <span class="pip pip-6"></span>
+                  <span class="pip pip-1"></span><span class="pip pip-2"></span><span class="pip pip-3"></span>
+                  <span class="pip pip-4"></span><span class="pip pip-5"></span><span class="pip pip-6"></span>
                 </div>
-                <!-- Mặt 3: 3 chấm chéo đen -->
                 <div class="face right face-3">
-                  <span class="pip pip-1"></span>
-                  <span class="pip pip-2"></span>
-                  <span class="pip pip-3"></span>
+                  <span class="pip pip-1"></span><span class="pip pip-2"></span><span class="pip pip-3"></span>
                 </div>
-                <!-- Mặt 4: 4 chấm đỏ ở 4 góc -->
                 <div class="face left face-4">
-                  <span class="pip pip-1 red"></span>
-                  <span class="pip pip-2 red"></span>
-                  <span class="pip pip-3 red"></span>
-                  <span class="pip pip-4 red"></span>
+                  <span class="pip pip-1 red"></span><span class="pip pip-2 red"></span>
+                  <span class="pip pip-3 red"></span><span class="pip pip-4 red"></span>
                 </div>
-                <!-- Mặt 2: 2 chấm chéo đen -->
                 <div class="face top face-2">
-                  <span class="pip pip-1"></span>
-                  <span class="pip pip-2"></span>
+                  <span class="pip pip-1"></span><span class="pip pip-2"></span>
                 </div>
-                <!-- Mặt 5: 4 góc + 1 tâm đen -->
                 <div class="face bottom face-5">
-                  <span class="pip pip-1"></span>
-                  <span class="pip pip-2"></span>
-                  <span class="pip pip-3"></span>
-                  <span class="pip pip-4"></span>
-                  <span class="pip pip-5"></span>
+                  <span class="pip pip-1"></span><span class="pip pip-2"></span><span class="pip pip-3"></span>
+                  <span class="pip pip-4"></span><span class="pip pip-5"></span>
                 </div>
               </div>
             </div>
@@ -138,44 +125,24 @@
             <div class="dice-scene" id="diceScene2">
               <div class="dice-shadow"></div>
               <div class="cube" id="dice2">
-                <!-- Mặt 1: 1 chấm đỏ to chính giữa -->
-                <div class="face front face-1">
-                  <span class="pip pip-1 red"></span>
-                </div>
-                <!-- Mặt 6: 2 cột x 3 chấm đen -->
+                <div class="face front face-1"><span class="pip pip-1 red"></span></div>
                 <div class="face back face-6">
-                  <span class="pip pip-1"></span>
-                  <span class="pip pip-2"></span>
-                  <span class="pip pip-3"></span>
-                  <span class="pip pip-4"></span>
-                  <span class="pip pip-5"></span>
-                  <span class="pip pip-6"></span>
+                  <span class="pip pip-1"></span><span class="pip pip-2"></span><span class="pip pip-3"></span>
+                  <span class="pip pip-4"></span><span class="pip pip-5"></span><span class="pip pip-6"></span>
                 </div>
-                <!-- Mặt 3: 3 chấm chéo đen -->
                 <div class="face right face-3">
-                  <span class="pip pip-1"></span>
-                  <span class="pip pip-2"></span>
-                  <span class="pip pip-3"></span>
+                  <span class="pip pip-1"></span><span class="pip pip-2"></span><span class="pip pip-3"></span>
                 </div>
-                <!-- Mặt 4: 4 chấm đỏ ở 4 góc -->
                 <div class="face left face-4">
-                  <span class="pip pip-1 red"></span>
-                  <span class="pip pip-2 red"></span>
-                  <span class="pip pip-3 red"></span>
-                  <span class="pip pip-4 red"></span>
+                  <span class="pip pip-1 red"></span><span class="pip pip-2 red"></span>
+                  <span class="pip pip-3 red"></span><span class="pip pip-4 red"></span>
                 </div>
-                <!-- Mặt 2: 2 chấm chéo đen -->
                 <div class="face top face-2">
-                  <span class="pip pip-1"></span>
-                  <span class="pip pip-2"></span>
+                  <span class="pip pip-1"></span><span class="pip pip-2"></span>
                 </div>
-                <!-- Mặt 5: 4 góc + 1 tâm đen -->
                 <div class="face bottom face-5">
-                  <span class="pip pip-1"></span>
-                  <span class="pip pip-2"></span>
-                  <span class="pip pip-3"></span>
-                  <span class="pip pip-4"></span>
-                  <span class="pip pip-5"></span>
+                  <span class="pip pip-1"></span><span class="pip pip-2"></span><span class="pip pip-3"></span>
+                  <span class="pip pip-4"></span><span class="pip pip-5"></span>
                 </div>
               </div>
             </div>
@@ -184,61 +151,42 @@
             <div class="dice-scene" id="diceScene3">
               <div class="dice-shadow"></div>
               <div class="cube" id="dice3">
-                <!-- Mặt 1: 1 chấm đỏ to chính giữa -->
-                <div class="face front face-1">
-                  <span class="pip pip-1 red"></span>
-                </div>
-                <!-- Mặt 6: 2 cột x 3 chấm đen -->
+                <div class="face front face-1"><span class="pip pip-1 red"></span></div>
                 <div class="face back face-6">
-                  <span class="pip pip-1"></span>
-                  <span class="pip pip-2"></span>
-                  <span class="pip pip-3"></span>
-                  <span class="pip pip-4"></span>
-                  <span class="pip pip-5"></span>
-                  <span class="pip pip-6"></span>
+                  <span class="pip pip-1"></span><span class="pip pip-2"></span><span class="pip pip-3"></span>
+                  <span class="pip pip-4"></span><span class="pip pip-5"></span><span class="pip pip-6"></span>
                 </div>
-                <!-- Mặt 3: 3 chấm chéo đen -->
                 <div class="face right face-3">
-                  <span class="pip pip-1"></span>
-                  <span class="pip pip-2"></span>
-                  <span class="pip pip-3"></span>
+                  <span class="pip pip-1"></span><span class="pip pip-2"></span><span class="pip pip-3"></span>
                 </div>
-                <!-- Mặt 4: 4 chấm đỏ ở 4 góc -->
                 <div class="face left face-4">
-                  <span class="pip pip-1 red"></span>
-                  <span class="pip pip-2 red"></span>
-                  <span class="pip pip-3 red"></span>
-                  <span class="pip pip-4 red"></span>
+                  <span class="pip pip-1 red"></span><span class="pip pip-2 red"></span>
+                  <span class="pip pip-3 red"></span><span class="pip pip-4 red"></span>
                 </div>
-                <!-- Mặt 2: 2 chấm chéo đen -->
                 <div class="face top face-2">
-                  <span class="pip pip-1"></span>
-                  <span class="pip pip-2"></span>
+                  <span class="pip pip-1"></span><span class="pip pip-2"></span>
                 </div>
-                <!-- Mặt 5: 4 góc + 1 tâm đen -->
                 <div class="face bottom face-5">
-                  <span class="pip pip-1"></span>
-                  <span class="pip pip-2"></span>
-                  <span class="pip pip-3"></span>
-                  <span class="pip pip-4"></span>
-                  <span class="pip pip-5"></span>
+                  <span class="pip pip-1"></span><span class="pip pip-2"></span><span class="pip pip-3"></span>
+                  <span class="pip pip-4"></span><span class="pip pip-5"></span>
                 </div>
               </div>
             </div>
 
           </div>
 
-          <!-- Chiếc Bát Hoàng Gia (Kéo rê để nặn bát) -->
+          <!-- Chiếc Bát Hoàng Gia (Kéo rê để nặn bát, tự mở sau 10s) -->
           <div class="bowl-overlay" id="bowlOverlay">
             <div class="bowl-handle"></div>
-            <div class="bowl-pattern">🐉 VẠN SỰ NHƯ Ý 🐉</div>
+            <div class="bowl-pattern">🐉 NHÀ CÁI TUMIZ 🐉</div>
             <div class="bowl-hint" id="bowlHint">🖐 KÉO BÁT ĐỂ MỞ</div>
+            <div class="bowl-auto-timer" id="bowlAutoTimer">Tự mở sau: <strong id="bowlTimerNum">10</strong>s</div>
           </div>
 
-          <!-- Result Tag hiển thị điểm khi mở bát -->
+          <!-- Result Tag hiển thị điểm khi mở bát (TÀI / XỈU có dấu tiếng Việt) -->
           <div class="result-banner" id="resultBanner">
-            <span class="score-breakdown" id="scoreBreakdown">3 + 4 + 5</span>
-            <span class="total-score" id="totalScore">12</span>
+            <span class="score-breakdown" id="scoreBreakdown">5 + 5 + 1</span>
+            <span class="total-score" id="totalScore">11</span>
             <span class="winner-title" id="winnerTitle">TÀI</span>
           </div>
         </div>
@@ -249,7 +197,7 @@
         </div>
       </div>
 
-      <!-- Bàn Đặt Cược Chính: TÀI vs XỈU -->
+      <!-- Bàn Đặt Cược Chính: TÀI vs XỈU (Tỷ lệ mới 1:1.97, Bão 1:100) -->
       <div class="betting-board">
         <!-- Cửa XỈU: 4 - 10 -->
         <div class="bet-spot bet-xiu" id="spotXiu" data-bet="xiu">
@@ -258,7 +206,7 @@
             <div class="spot-title">XỈU</div>
             <div class="spot-range">4 - 10</div>
           </div>
-          <div class="spot-rate">1 Ăn 2</div>
+          <div class="spot-rate">1 Ăn 1.97</div>
           <div class="spot-stats">
             <span>Tổng cược: <b id="totalBetXiu">0 ₫</b></span>
             <span>Số người: <b id="userCountXiu">142</b></span>
@@ -267,22 +215,22 @@
             <span>Đã cược:</span>
             <strong id="myBetXiuVal">0 ₫</strong>
           </div>
-          <button class="btn-bet-hit" id="hitXiu">CƯỢC XỈU</button>
+          <button class="btn-bet-hit" id="hitXiu">CƯỢC XỈU (1:1.97)</button>
         </div>
 
-        <!-- Cửa Trung Tâm: BÃO (Bộ ba đồng nhất 1:30) -->
+        <!-- Cửa Trung Tâm: BÃO (Bộ ba đồng nhất 1:100, 50 ván 1 lần) -->
         <div class="bet-spot bet-triple" id="spotTriple" data-bet="triple">
           <div class="spot-header">
             <div class="spot-title-small">⚡ BÃO ⚡</div>
             <div class="spot-range">3 Con Giống Nhau</div>
           </div>
-          <div class="spot-rate gold-text">1 Ăn 30</div>
+          <div class="spot-rate gold-text">1 Ăn 100</div>
           <div class="triple-icons">🎲 🎲 🎲</div>
           <div class="my-bet-badge" id="myBetTriple">
             <span>Đã cược:</span>
             <strong id="myBetTripleVal">0 ₫</strong>
           </div>
-          <button class="btn-bet-hit btn-triple-hit" id="hitTriple">CƯỢC BÃO</button>
+          <button class="btn-bet-hit btn-triple-hit" id="hitTriple">CƯỢC BÃO (1:100)</button>
         </div>
 
         <!-- Cửa TÀI: 11 - 17 -->
@@ -292,7 +240,7 @@
             <div class="spot-title">TÀI</div>
             <div class="spot-range">11 - 17</div>
           </div>
-          <div class="spot-rate">1 Ăn 2</div>
+          <div class="spot-rate">1 Ăn 1.97</div>
           <div class="spot-stats">
             <span>Tổng cược: <b id="totalBetTai">0 ₫</b></span>
             <span>Số người: <b id="userCountTai">189</b></span>
@@ -301,7 +249,7 @@
             <span>Đã cược:</span>
             <strong id="myBetTaiVal">0 ₫</strong>
           </div>
-          <button class="btn-bet-hit" id="hitTai">CƯỢC TÀI</button>
+          <button class="btn-bet-hit" id="hitTai">CƯỢC TÀI (1:1.97)</button>
         </div>
       </div>
 
@@ -319,7 +267,7 @@
         </div>
       </div>
 
-      <!-- Khay Chọn Phỉnh & Thao Tác Cược -->
+      <!-- Khay Chọn Phỉnh & Thao Tác Cược (Đã bỏ nút Lắc Ngay theo yêu cầu) -->
       <div class="chip-rack-section">
         <div class="chips-container">
           <button class="chip chip-1k active" data-value="1000">
@@ -349,9 +297,6 @@
         </div>
 
         <div class="bet-action-buttons">
-          <button id="btnRollNow" class="btn-ctrl btn-roll" title="Bắt đầu lắc ngay">
-            🎲 LẮC NGAY
-          </button>
           <button id="btnDouble" class="btn-ctrl btn-util" title="Nhân đôi cược">
             ✖2 Gấp Đôi
           </button>
@@ -369,7 +314,7 @@
         <div class="road-header">
           <div class="road-title">
             <span>📊 BẢNG SOI CẦU TÀI XỈU</span>
-            <small>50 Phiên Gần Nhất</small>
+            <small>50 Phiên Gần Nhất (Cứ 50 Ván Có 1 Bão)</small>
           </div>
           <div class="road-stats">
             <span class="stat-tag stat-tai">Tài: <strong id="statTaiCount">0</strong> (<span id="statTaiPct">50%</span>)</span>
@@ -380,9 +325,7 @@
 
         <!-- Dãy chấm cầu tròn (Bead Plate) -->
         <div class="bead-road-wrap">
-          <div class="bead-road" id="beadRoad">
-            <!-- Render các chấm tròn T (Đỏ) / X (Xanh) -->
-          </div>
+          <div class="bead-road" id="beadRoad"></div>
         </div>
       </section>
 
@@ -417,7 +360,7 @@
 
     <!-- Footer -->
     <footer class="footer">
-      <p>🎲 Trò chơi Tài Xỉu mô phỏng giải trí - BIDV Banking Chuyển Khoản Demo - Chúc bạn may mắn!</p>
+      <p>🎲 NHÀ CÁI TUMIZ - Chơi Thật Hay, Thắng Liền Tay | Cổng Game VIP Quốc Tế</p>
     </footer>
 
     <!-- Notification Toast Popup -->
@@ -429,7 +372,7 @@
         <div class="win-sparkles">✨ 🎉 ✨</div>
         <h2 id="winModalTitle">THẮNG LỚN!</h2>
         <div class="win-amount" id="winModalAmount">+ 2,000,000 ₫</div>
-        <p id="winModalDetail">Kết quả: 12 - TÀI</p>
+        <p id="winModalDetail">Kết quả: 5+5+1 = 11 - TÀI</p>
         <button id="btnCloseWinModal" class="btn-gold">TIẾP TỤC CHƠI</button>
       </div>
     </div>
@@ -443,12 +386,11 @@
         <div class="modal-header">
           <div class="modal-title-wrap">
             <span class="modal-icon">🔐</span>
-            <h2>TÀI KHOẢN CASINO VIP</h2>
+            <h2>NHÀ CÁI TUMIZ - TÀI KHOẢN</h2>
           </div>
           <button class="btn-close-modal" id="btnCloseAuth">✕</button>
         </div>
 
-        <!-- Auth Tabs -->
         <div class="auth-tabs">
           <button class="auth-tab active" id="tabBtnLogin">ĐĂNG NHẬP</button>
           <button class="auth-tab" id="tabBtnRegister">ĐĂNG KÝ MỚI</button>
@@ -502,14 +444,13 @@
           <div class="modal-title-wrap">
             <span class="modal-badge-bank">BIDV</span>
             <div>
-              <h2>NẠP TIỀN CHUYỂN KHOẢN 24/7</h2>
-              <p class="modal-sub">Ngân hàng TMCP Đầu tư và Phát triển Việt Nam</p>
+              <h2>NẠP TIỀN CHUYỂN KHOẢN BIDV</h2>
+              <p class="modal-sub">Chuyển tiền vào STK: 8860252059 để được admin Tumiz duyệt tiền</p>
             </div>
           </div>
           <button class="btn-close-modal" id="btnCloseDeposit">✕</button>
         </div>
 
-        <!-- Deposit Tabs -->
         <div class="deposit-tabs">
           <button class="dep-tab active" id="tabBtnCreateDep">Chuyển Khoản & VietQR</button>
           <button class="dep-tab" id="tabBtnDepHistory">Lịch Sử Nạp Tiền</button>
@@ -580,7 +521,7 @@
                 <div class="bank-row">
                   <span class="label">CHỦ TÀI KHOẢN:</span>
                   <div class="val-group">
-                    <strong>BIDV VIP CASINO</strong>
+                    <strong>NHÀ CÁI TUMIZ</strong>
                   </div>
                 </div>
 
@@ -604,13 +545,13 @@
 
             <!-- Cảnh báo quan trọng -->
             <div class="transfer-warning">
-              ⚠️ <strong>LƯU Ý:</strong> Bạn phải điền chính xác <strong>Số tài khoản: 8860252059 (BIDV)</strong> và <strong>Nội dung chuyển khoản</strong> ở trên để hệ thống tự động kiểm tra và cộng tiền vào tài khoản!
+              ⚠️ <strong>LƯU Ý:</strong> Chuyển đúng <strong>Số tài khoản: 8860252059 (BIDV)</strong> và ghi chính xác <strong>Nội dung chuyển khoản</strong>. Sau khi chuyển, bấm nút bên dưới để gửi lệnh đến Admin Tumiz duyệt tiền vào tài khoản của bạn!
             </div>
 
             <!-- Nút xác nhận giao dịch -->
             <div class="bill-actions">
               <button class="btn-confirm-transfer" id="btnConfirmTransfer">
-                ✅ TÔI ĐÃ CHUYỂN TIỀN (KIỂM TRA GIAO DỊCH)
+                ✅ TÔI ĐÃ CHUYỂN TIỀN (GỬI LỆNH CHO ADMIN DUYỆT)
               </button>
               <button class="btn-secondary-modal" id="btnBackStep1">
                 🔄 Chọn Số Tiền Khác
@@ -646,19 +587,247 @@
       </div>
     </div>
 
-    <!-- Modal Kiểm Tra Giao Dịch BIDV (Processing Animation) -->
-    <div id="checkTxModal" class="casino-modal">
+    <!-- ====================================================================
+         MODAL 3: RÚT TIỀN VỀ TÀI KHOẢN NGÂN HÀNG (YÊU CẦU MỚI)
+         ==================================================================== -->
+    <div id="withdrawModal" class="casino-modal">
       <div class="modal-backdrop"></div>
-      <div class="modal-dialog check-tx-dialog">
-        <div class="tx-spinner-wrap">
-          <div class="tx-spinner"></div>
-          <div class="tx-bank-logo">BIDV</div>
+      <div class="modal-dialog withdraw-dialog">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-icon">💸</span>
+            <div>
+              <h2>RÚT TIỀN VỀ TÀI KHOẢN NGÂN HÀNG</h2>
+              <p class="modal-sub">Gửi lệnh rút tiền để Admin Tumiz chuyển khoản trực tiếp cho bạn</p>
+            </div>
+          </div>
+          <button class="btn-close-modal" id="btnCloseWithdraw">✕</button>
         </div>
-        <h3 id="checkTxTitle">Đang Kiểm Tra Giao Dịch BIDV...</h3>
-        <p id="checkTxDesc">Hệ thống đang kết nối cổng BIDV với số tài khoản <strong>8860252059</strong> để đối soát mã nội dung...</p>
-        <div class="tx-progress-bar">
-          <div class="tx-progress-fill" id="txProgressFill"></div>
+
+        <div class="withdraw-tabs">
+          <button class="withdraw-tab active" id="tabBtnCreateWithdraw">Tạo Lệnh Rút Tiền</button>
+          <button class="withdraw-tab" id="tabBtnWithdrawHistory">Lịch Sử Rút Tiền</button>
         </div>
+
+        <!-- Tab 1: Tạo lệnh rút -->
+        <div class="withdraw-tab-content" id="withdrawContentCreate">
+          <div class="withdraw-balance-banner">
+            <span>Số dư có thể rút:</span>
+            <strong id="withdrawAvailBalance">0 ₫</strong>
+          </div>
+
+          <form id="withdrawForm" class="withdraw-form">
+            <div class="form-group">
+              <label for="withdrawBank">Chọn Ngân Hàng Nhận:</label>
+              <select id="withdrawBank" required class="select-bank">
+                <option value="">-- Chọn ngân hàng thụ hưởng --</option>
+                <option value="BIDV">BIDV - Ngân hàng TMCP Đầu tư và Phát triển VN</option>
+                <option value="Vietcombank">Vietcombank - Ngân hàng Ngoại Thương VN</option>
+                <option value="MBBank">MBBank - Ngân hàng Quân Đội</option>
+                <option value="Techcombank">Techcombank - Ngân hàng Kỹ Thương</option>
+                <option value="VietinBank">VietinBank - Ngân hàng Công Thương VN</option>
+                <option value="ACB">ACB - Ngân hàng Á Châu</option>
+                <option value="VPBank">VPBank - Ngân hàng Việt Nam Thịnh Vượng</option>
+                <option value="TPBank">TPBank - Ngân hàng Tiên Phong</option>
+                <option value="Sacombank">Sacombank - Ngân hàng Sài Gòn Thương Tín</option>
+                <option value="Agribank">Agribank - Ngân hàng Nông nghiệp VN</option>
+                <option value="VIB">VIB - Ngân hàng Quốc Tế</option>
+                <option value="HDBank">HDBank - Ngân hàng Phát triển TP.HCM</option>
+                <option value="Momo">Ví Điện Tử MoMo</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="withdrawStk">Số Tài Khoản Nhận:</label>
+              <input type="text" id="withdrawStk" placeholder="Nhập chính xác số tài khoản..." required>
+            </div>
+
+            <div class="form-group">
+              <label for="withdrawName">Tên Chủ Tài Khoản:</label>
+              <input type="text" id="withdrawName" placeholder="VIẾT HOA KHÔNG DẤU (VD: NGUYEN VAN A)..." required style="text-transform: uppercase;">
+            </div>
+
+            <div class="form-group">
+              <label for="withdrawAmount">Số Tiền Muốn Rút (₫):</label>
+              <div class="custom-input-box">
+                <input type="number" id="withdrawAmount" min="50000" step="10000" placeholder="Tối thiểu 50.000 ₫" required>
+                <span class="custom-suffix">VND</span>
+              </div>
+            </div>
+
+            <div class="quick-withdraw-btns">
+              <button type="button" class="btn-quick-withdraw" data-amt="100000">100K</button>
+              <button type="button" class="btn-quick-withdraw" data-amt="200000">200K</button>
+              <button type="button" class="btn-quick-withdraw" data-amt="500000">500K</button>
+              <button type="button" class="btn-quick-withdraw" data-amt="1000000">1M</button>
+              <button type="button" class="btn-quick-withdraw" data-amt="5000000">5M</button>
+              <button type="button" class="btn-quick-withdraw" id="btnWithdrawAll">TẤT CẢ</button>
+            </div>
+
+            <div class="withdraw-note">
+              📌 Lệnh rút tiền sẽ được gửi trực tiếp đến <strong>Admin Nhà Cái Tumiz</strong> để chuyển khoản thẳng vào số tài khoản của bạn.
+            </div>
+
+            <button type="submit" class="btn-primary-modal btn-submit-withdraw">
+              🚀 GỬI YÊU CẦU RÚT TIỀN CHO ADMIN TUMIZ
+            </button>
+          </form>
+        </div>
+
+        <!-- Tab 2: Lịch sử rút -->
+        <div class="withdraw-tab-content hidden" id="withdrawContentHistory">
+          <div class="dep-history-table-wrap">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Mã Lệnh</th>
+                  <th>Số Tiền</th>
+                  <th>Ngân Hàng Nhận</th>
+                  <th>STK & Tên</th>
+                  <th>Thời Gian</th>
+                  <th>Trạng Thái</th>
+                </tr>
+              </thead>
+              <tbody id="withdrawHistoryBody">
+                <tr class="empty-row">
+                  <td colspan="6">Chưa có lệnh rút tiền nào.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         MODAL 4: BẢNG QUẢN TRỊ ADMIN TUMIZ (DUYỆT NẠP, DUYỆT RÚT & KIỂM SOÁT LẠM PHÁT)
+         ==================================================================== -->
+    <div id="adminModal" class="casino-modal">
+      <div class="modal-backdrop"></div>
+      <div class="modal-dialog admin-dialog">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-badge-admin">ADMIN</span>
+            <div>
+              <h2>BẢNG QUẢN TRỊ - NHÀ CÁI TUMIZ</h2>
+              <p class="modal-sub">Duyệt Nạp Tiền BIDV (8860252059) | Duyệt Lệnh Rút | Điều Tiết Lạm Phát</p>
+            </div>
+          </div>
+          <button class="btn-close-modal" id="btnCloseAdmin">✕</button>
+        </div>
+
+        <!-- Admin System Overview -->
+        <div class="admin-stats-bar">
+          <div class="admin-stat-card">
+            <span class="stat-lbl">Tài Khoản Hoạt Động</span>
+            <strong id="adminTotalUsers">1</strong>
+          </div>
+          <div class="admin-stat-card">
+            <span class="stat-lbl">Tổng Tiền Lưu Hành</span>
+            <strong id="adminTotalMoney" class="text-gold">0 ₫</strong>
+          </div>
+          <div class="admin-stat-card">
+            <span class="stat-lbl">Lệnh Nạp Chờ Duyệt</span>
+            <strong id="adminPendingDepCount" class="text-warn">0</strong>
+          </div>
+          <div class="admin-stat-card">
+            <span class="stat-lbl">Lệnh Rút Cần Chuyển</span>
+            <strong id="adminPendingWithdrawCount" class="text-red">0</strong>
+          </div>
+        </div>
+
+        <!-- Admin Tabs -->
+        <div class="admin-tabs">
+          <button class="admin-tab active" id="tabBtnAdminDep">📥 Duyệt Nạp Tiền (<span id="badgePendingDep">0</span>)</button>
+          <button class="admin-tab" id="tabBtnAdminWithdraw">📤 Duyệt Rút Tiền (<span id="badgePendingWithdraw">0</span>)</button>
+          <button class="admin-tab" id="tabBtnAdminInflate">⚖️ Kiểm Soát Lạm Phát (Bơm/Hút)</button>
+        </div>
+
+        <!-- Tab 1: Duyệt Lệnh Nạp Tiền -->
+        <div class="admin-tab-content" id="adminContentDep">
+          <div class="admin-panel-title">
+            <span>Danh sách khách chuyển khoản vào BIDV (STK: 8860252059) chờ bạn duyệt:</span>
+            <button class="btn-refresh-admin" id="btnRefreshDep">🔄 Làm mới</button>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="history-table admin-table">
+              <thead>
+                <tr>
+                  <th>Mã Lệnh</th>
+                  <th>Tài Khoản</th>
+                  <th>Số Tiền</th>
+                  <th>Nội Dung CK</th>
+                  <th>Thời Gian</th>
+                  <th>Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody id="adminDepListBody">
+                <tr class="empty-row">
+                  <td colspan="6">Không có lệnh nạp tiền nào đang chờ duyệt.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab 2: Duyệt Lệnh Rút Tiền -->
+        <div class="admin-tab-content hidden" id="adminContentWithdraw">
+          <div class="admin-panel-title">
+            <span>Danh sách yêu cầu rút tiền khách gửi - Bạn chuyển khoản xong bấm Xác Nhận:</span>
+            <button class="btn-refresh-admin" id="btnRefreshWithdraw">🔄 Làm mới</button>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="history-table admin-table">
+              <thead>
+                <tr>
+                  <th>Mã Rút</th>
+                  <th>Tài Khoản</th>
+                  <th>Số Tiền Cần Chuyển</th>
+                  <th>Ngân Hàng</th>
+                  <th>Số Tài Khoản Nhận</th>
+                  <th>Tên Chủ TK</th>
+                  <th>Thao Tác</th>
+                </tr>
+              </thead>
+              <tbody id="adminWithdrawListBody">
+                <tr class="empty-row">
+                  <td colspan="7">Không có yêu cầu rút tiền nào đang chờ xử lý.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab 3: Kiểm Soát Lạm Phát & Bơm/Hút Tiền -->
+        <div class="admin-tab-content hidden" id="adminContentInflate">
+          <div class="inflation-box">
+            <h3>⚖️ CÔNG CỤ ĐIỀU TIẾT CUNG TIỀN & KIỂM SOÁT LẠM PHÁT</h3>
+            <p>Admin có thể chủ động bơm thêm tiền hoặc hút bớt tiền từ bất kỳ tài khoản người chơi nào.</p>
+            
+            <div class="inflation-form">
+              <div class="form-group">
+                <label for="inflateUserSelect">Chọn tài khoản người chơi:</label>
+                <select id="inflateUserSelect" class="select-bank"></select>
+              </div>
+
+              <div class="form-group">
+                <label for="inflateAmount">Số tiền điều chỉnh (₫):</label>
+                <input type="number" id="inflateAmount" value="500000" min="1000" step="10000">
+              </div>
+
+              <div class="inflation-actions">
+                <button type="button" class="btn-inflate-add" id="btnInflateAdd">
+                  ➕ BƠM TIỀN (Thêm vào số dư)
+                </button>
+                <button type="button" class="btn-inflate-sub" id="btnInflateSub">
+                  ➖ HÚT TIỀN (Trừ khỏi số dư để giảm lạm phát)
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </div>
 

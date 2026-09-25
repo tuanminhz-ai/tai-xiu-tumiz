@@ -1,12 +1,16 @@
 /* ==========================================================================
-   TÀI XỈU VIP CASINO - GAME ENGINE & AUTH & BIDV DEPOSIT (8860252059)
+   NHÀ CÁI TUMIZ - GAME ENGINE & AUTH & BIDV BANKING (8860252059)
+   Slogan: Chơi thật hay, thắng liền tay
    Rules:
      - 3 xúc xắc 3D 6 mặt (1 - 6 mỗi con)
-     - Tổng điểm >= 11: TÀI (1 ăn 2)
-     - Tổng điểm <= 10: XỈU (1 ăn 2)
-     - Bão: 3 xúc xắc có số điểm bằng nhau (1 ăn 30)
-     - Cược Chẵn / Lẻ theo tổng điểm (1 ăn 1.95)
-     - Multi-user authentication & BIDV VietQR Banking deposit
+     - Tổng điểm >= 11: TÀI (1 ĂN 1.97)
+     - Tổng điểm <= 10: XỈU (1 ĂN 1.97)
+     - Bão: 3 xúc xắc có số điểm bằng nhau (1 ĂN 100)
+     - Cứ 50 lần chơi sẽ có 1 lần bão (1/50 cycle)
+     - Chữ sau khi mở bát ghi có dấu chuẩn: "Tài" và "Xỉu"
+     - Lắc bát xong đếm ngược 10s: nếu không nặn bát sẽ tự mở, tự qua tay tiếp theo
+     - Rút tiền: tạo request (STK + Ngân Hàng + Tên) gửi về Admin để tự chuyển tiền
+     - Nạp tiền: chuyển khoản BIDV 8860252059, admin tự tay duyệt & cộng tiền để kiểm soát lạm phát
    ========================================================================== */
 
 (function () {
@@ -15,11 +19,11 @@
   // --- MULTI-USER AUTH STATE ---
   const AUTH = {
     currentUser: null,
-    users: {}, // { username: { username, password, balance, vip, deposits: [], history: [] } }
+    users: {}, // { username: { username, password, balance, vip, deposits: [], withdrawals: [], history: [] } }
 
     load() {
       try {
-        const stored = localStorage.getItem('tx_vip_auth');
+        const stored = localStorage.getItem('tx_tumiz_auth');
         if (stored) {
           const parsed = JSON.parse(stored);
           this.users = parsed.users || {};
@@ -29,23 +33,37 @@
         console.warn('Cannot load auth', e);
       }
 
-      // Default demo account if none exists
+      // Default demo account
       if (!this.users['demo'] && Object.keys(this.users).length === 0) {
         this.users['demo'] = {
           username: 'demo',
           password: '123',
-          balance: 500000,
+          balance: 200000,
           vip: 1,
           deposits: [
             {
               code: 'NAP TX8892',
-              amount: 500000,
+              amount: 200000,
               bank: 'BIDV',
               stk: '8860252059',
-              time: new Date().toLocaleTimeString('vi-VN'),
+              time: new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN'),
               status: 'Thành Công'
             }
           ],
+          withdrawals: [],
+          history: []
+        };
+      }
+
+      // Default admin account tumiz
+      if (!this.users['tumiz']) {
+        this.users['tumiz'] = {
+          username: 'tumiz',
+          password: '123',
+          balance: 50000000,
+          vip: 99,
+          deposits: [],
+          withdrawals: [],
           history: []
         };
       }
@@ -57,7 +75,7 @@
 
     save() {
       try {
-        localStorage.setItem('tx_vip_auth', JSON.stringify({
+        localStorage.setItem('tx_tumiz_auth', JSON.stringify({
           users: this.users,
           currentUser: this.currentUser
         }));
@@ -83,22 +101,22 @@
         return { success: false, message: 'Mật khẩu phải tối thiểu 4 ký tự!' };
       }
 
-      // Create new user with 100,000 starter bonus
       this.users[username] = {
         username: username,
         password: password,
-        balance: 100000,
+        balance: 100000, // 100k starter bonus
         vip: 1,
         deposits: [
           {
             code: 'BONUS TANTHU',
             amount: 100000,
-            bank: 'HỆ THỐNG',
+            bank: 'NHÀ CÁI TUMIZ',
             stk: '-',
-            time: new Date().toLocaleTimeString('vi-VN'),
+            time: new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN'),
             status: 'Thành Công'
           }
         ],
+        withdrawals: [],
         history: []
       };
 
@@ -132,11 +150,14 @@
     currentChip: 1000,
     nanBatEnabled: true,
     sessionId: 882910,
+    roundCounter: 0, // Track 50-game cycle for Bão
     timeLeft: 15,
     timerInterval: null,
+    bowlAutoTimerInterval: null,
+    revealTimeLeft: 10,
     isRolling: false,
     isRevealing: false,
-    currentDice: [1, 2, 3],
+    currentDice: [5, 5, 1],
     bets: {
       tai: 0,
       xiu: 0,
@@ -158,7 +179,6 @@
       totalGames: 0,
       winGames: 0
     },
-    // Deposit state
     pendingDeposit: {
       amount: 200000,
       code: 'NAP TX8892'
@@ -166,7 +186,6 @@
   };
 
   // 3D Cube Base Rotations for Faces 1 to 6
-  // (In our 3D geometry: Face 1 Front, Face 2 Top, Face 3 Right, Face 4 Left, Face 5 Bottom, Face 6 Back)
   const BASE_FACE_ROTATIONS = {
     1: { rx: 0,   ry: 0 },
     2: { rx: -90, ry: 0 },
@@ -176,29 +195,30 @@
     6: { rx: 0,   ry: 180 }
   };
 
-  // Realistic resting 3D isometric tilt angles for the 3 individual dice
   const DICE_TILTS = [
-    { x: -22, y: 24, z: -4 },  // Dice 1
-    { x: -26, y: -20, z: 6 },  // Dice 2
-    { x: -18, y: 30, z: -8 }   // Dice 3
+    { x: -22, y: 24, z: -4 },
+    { x: -26, y: -20, z: 6 },
+    { x: -18, y: 30, z: -8 }
   ];
 
   let cumulativeSpins = [0, 0, 0];
 
   // --- DOM ELEMENTS ---
   const el = {
-    // Header & User info
     displayUsername: document.getElementById('displayUsername'),
     displayVip: document.getElementById('displayVip'),
     btnLogout: document.getElementById('btnLogout'),
     btnUserMenu: document.getElementById('btnUserMenu'),
     userBalance: document.getElementById('userBalance'),
     btnOpenDeposit: document.getElementById('btnOpenDeposit'),
+    btnOpenWithdraw: document.getElementById('btnOpenWithdraw'),
+    btnOpenAdmin: document.getElementById('btnOpenAdmin'),
     btnSound: document.getElementById('soundIcon'),
     soundToggleBtn: document.getElementById('btnSound'),
     btnMode: document.getElementById('btnMode'),
     modeText: document.getElementById('modeText'),
     sessionId: document.getElementById('sessionId'),
+    roundCounterBadge: document.getElementById('roundCounterBadge'),
     timerNumber: document.getElementById('timerNumber'),
     timerProgress: document.getElementById('timerProgress'),
     timerLabel: document.getElementById('timerLabel'),
@@ -211,6 +231,8 @@
     dice3: document.getElementById('dice3'),
     bowlOverlay: document.getElementById('bowlOverlay'),
     bowlHint: document.getElementById('bowlHint'),
+    bowlAutoTimer: document.getElementById('bowlAutoTimer'),
+    bowlTimerNum: document.getElementById('bowlTimerNum'),
     bowlControls: document.getElementById('bowlControls'),
     btnQuickOpen: document.getElementById('btnQuickOpen'),
     resultBanner: document.getElementById('resultBanner'),
@@ -230,7 +252,6 @@
     myBetOdd: document.getElementById('myBetOdd'),
 
     // Control buttons
-    btnRollNow: document.getElementById('btnRollNow'),
     btnDouble: document.getElementById('btnDouble'),
     btnAllIn: document.getElementById('btnAllIn'),
     btnClearBet: document.getElementById('btnClearBet'),
@@ -269,7 +290,7 @@
     regPasswordConfirm: document.getElementById('regPasswordConfirm'),
     btnQuickGuest: document.getElementById('btnQuickGuest'),
 
-    // Deposit Modal (BIDV 8860252059)
+    // Deposit Modal
     depositModal: document.getElementById('depositModal'),
     btnCloseDeposit: document.getElementById('btnCloseDeposit'),
     tabBtnCreateDep: document.getElementById('tabBtnCreateDep'),
@@ -288,19 +309,74 @@
     btnBackStep1: document.getElementById('btnBackStep1'),
     depositHistoryBody: document.getElementById('depositHistoryBody'),
 
-    // Check Transaction Modal
-    checkTxModal: document.getElementById('checkTxModal'),
-    txProgressFill: document.getElementById('txProgressFill'),
-    checkTxTitle: document.getElementById('checkTxTitle'),
-    checkTxDesc: document.getElementById('checkTxDesc')
+    // Withdraw Modal
+    withdrawModal: document.getElementById('withdrawModal'),
+    btnCloseWithdraw: document.getElementById('btnCloseWithdraw'),
+    tabBtnCreateWithdraw: document.getElementById('tabBtnCreateWithdraw'),
+    tabBtnWithdrawHistory: document.getElementById('tabBtnWithdrawHistory'),
+    withdrawContentCreate: document.getElementById('withdrawContentCreate'),
+    withdrawContentHistory: document.getElementById('withdrawContentHistory'),
+    withdrawAvailBalance: document.getElementById('withdrawAvailBalance'),
+    withdrawForm: document.getElementById('withdrawForm'),
+    withdrawBank: document.getElementById('withdrawBank'),
+    withdrawStk: document.getElementById('withdrawStk'),
+    withdrawName: document.getElementById('withdrawName'),
+    withdrawAmount: document.getElementById('withdrawAmount'),
+    btnWithdrawAll: document.getElementById('btnWithdrawAll'),
+    withdrawHistoryBody: document.getElementById('withdrawHistoryBody'),
+
+    // Admin Dashboard Modal
+    adminModal: document.getElementById('adminModal'),
+    btnCloseAdmin: document.getElementById('btnCloseAdmin'),
+    adminTotalUsers: document.getElementById('adminTotalUsers'),
+    adminTotalMoney: document.getElementById('adminTotalMoney'),
+    adminPendingDepCount: document.getElementById('adminPendingDepCount'),
+    adminPendingWithdrawCount: document.getElementById('adminPendingWithdrawCount'),
+    badgePendingDep: document.getElementById('badgePendingDep'),
+    badgePendingWithdraw: document.getElementById('badgePendingWithdraw'),
+    tabBtnAdminDep: document.getElementById('tabBtnAdminDep'),
+    tabBtnAdminWithdraw: document.getElementById('tabBtnAdminWithdraw'),
+    tabBtnAdminInflate: document.getElementById('tabBtnAdminInflate'),
+    adminContentDep: document.getElementById('adminContentDep'),
+    adminContentWithdraw: document.getElementById('adminContentWithdraw'),
+    adminContentInflate: document.getElementById('adminContentInflate'),
+    adminDepListBody: document.getElementById('adminDepListBody'),
+    adminWithdrawListBody: document.getElementById('adminWithdrawListBody'),
+    btnRefreshDep: document.getElementById('btnRefreshDep'),
+    btnRefreshWithdraw: document.getElementById('btnRefreshWithdraw'),
+    inflateUserSelect: document.getElementById('inflateUserSelect'),
+    inflateAmount: document.getElementById('inflateAmount'),
+    btnInflateAdd: document.getElementById('btnInflateAdd'),
+    btnInflateSub: document.getElementById('btnInflateSub')
   };
+
+  // --- STORAGE LOAD ---
+  function loadPersistedData() {
+    try {
+      const savedCount = localStorage.getItem('tx_tumiz_round_counter');
+      if (savedCount !== null) {
+        STATE.roundCounter = parseInt(savedCount, 10) || 0;
+      }
+      const savedHist = localStorage.getItem('tx_tumiz_global_hist');
+      if (savedHist) {
+        STATE.globalHistory = JSON.parse(savedHist);
+      }
+    } catch (e) {}
+  }
+
+  function savePersistedData() {
+    try {
+      localStorage.setItem('tx_tumiz_round_counter', STATE.roundCounter);
+      localStorage.setItem('tx_tumiz_global_hist', JSON.stringify(STATE.globalHistory.slice(0, 50)));
+    } catch (e) {}
+  }
 
   // --- FORMATTING HELPERS ---
   function formatMoney(num) {
     return Number(num).toLocaleString('vi-VN');
   }
 
-  function showToast(msg, duration = 2200) {
+  function showToast(msg, duration = 2400) {
     el.toast.textContent = msg;
     el.toast.classList.add('show');
     setTimeout(() => {
@@ -337,13 +413,25 @@
     el.userCountXiu.textContent = STATE.simulatedBets.xiuUsers + (STATE.bets.xiu > 0 ? 1 : 0);
   }
 
+  function updateRoundCounterUI() {
+    const currentInCycle = (STATE.roundCounter % 50) + 1;
+    el.roundCounterBadge.textContent = `Ván: ${currentInCycle}/50`;
+    if (currentInCycle === 50) {
+      el.roundCounterBadge.style.background = 'rgba(239, 68, 68, 0.3)';
+      el.roundCounterBadge.style.borderColor = '#ef4444';
+      el.roundCounterBadge.textContent = '🔥 VÁN 50: BÃO!';
+    } else {
+      el.roundCounterBadge.style.background = '';
+      el.roundCounterBadge.style.borderColor = '';
+    }
+  }
+
   // --- 3D 6-FACE DICE ENGINE ---
   function position3DDice(diceIndex, faceValue) {
     const diceEl = el[`dice${diceIndex}`];
     const base = BASE_FACE_ROTATIONS[faceValue] || { rx: 0, ry: 0 };
     const tilt = DICE_TILTS[diceIndex - 1];
 
-    // Add 2-3 full 360 degree spins per roll
     cumulativeSpins[diceIndex - 1] += 360 * (3 + Math.floor(Math.random() * 2));
     const spin = cumulativeSpins[diceIndex - 1];
 
@@ -369,7 +457,7 @@
     }
 
     if (user.balance < STATE.currentChip) {
-      showToast('Số dư không đủ! Bấm Nạp Tiền qua BIDV để nạp thêm.');
+      showToast('Số dư không đủ! Bấm Nạp Tiền BIDV để nạp thêm.');
       window.soundEngine.playLoss();
       return;
     }
@@ -454,15 +542,16 @@
     window.soundEngine.playChip();
     updateAuthHeaderUI();
     updateBetDisplays();
-    showToast(`🔥 ĐÃ ALL-IN ${formatMoney(amount)} ₫ vào ${target.toUpperCase()}!`);
+    showToast(`🔥 ĐÃ ALL-IN ${formatMoney(amount)} ₫ vào ${target === 'tai' ? 'TÀI' : 'XỈU'}!`);
   }
 
   // --- SESSION & ROLLING ENGINE ---
   function startSessionTimer() {
     clearInterval(STATE.timerInterval);
+    clearInterval(STATE.bowlAutoTimerInterval);
     STATE.timeLeft = 15;
     el.timerLabel.textContent = 'ĐẶT CƯỢC';
-    el.gameStatus.textContent = 'Đang nhận cược...';
+    el.gameStatus.textContent = 'Nhà Cái Tumiz đang nhận cược...';
     el.gameStatus.className = 'status-badge';
     el.resultBanner.classList.remove('show');
 
@@ -472,6 +561,7 @@
     STATE.simulatedBets.taiUsers = Math.floor(120 + Math.random() * 150);
     STATE.simulatedBets.xiuUsers = Math.floor(100 + Math.random() * 130);
     updateBetDisplays();
+    updateRoundCounterUI();
 
     // Reset bowl overlay
     el.bowlOverlay.classList.remove('active');
@@ -484,7 +574,6 @@
       STATE.timeLeft--;
       updateTimerDisplay();
 
-      // Audio tick last 5 seconds
       if (STATE.timeLeft <= 5 && STATE.timeLeft > 0) {
         window.soundEngine.playTick();
         el.timerProgress.classList.add('urgent');
@@ -514,17 +603,38 @@
   function triggerRoll() {
     if (STATE.isRolling || STATE.isRevealing) return;
     clearInterval(STATE.timerInterval);
+    clearInterval(STATE.bowlAutoTimerInterval);
 
     STATE.isRolling = true;
+    STATE.roundCounter++;
+    savePersistedData();
+    updateRoundCounterUI();
+
     el.timerLabel.textContent = 'LẮC BÁT';
     el.gameStatus.textContent = 'Đang lắc 3 xúc xắc 3D...';
     el.gameStatus.className = 'status-badge rolling';
     el.resultBanner.classList.remove('show');
 
-    // Generate random 1 - 6 for 3 dice
-    const d1 = Math.floor(Math.random() * 6) + 1;
-    const d2 = Math.floor(Math.random() * 6) + 1;
-    const d3 = Math.floor(Math.random() * 6) + 1;
+    // RULE: "Cứ 50 lần chơi sẽ có 1 lần bão"
+    let d1, d2, d3;
+    const is50thGame = (STATE.roundCounter % 50 === 0);
+
+    if (is50thGame) {
+      // Guaranteed Triple (Bão)
+      const tripleVal = Math.floor(Math.random() * 6) + 1;
+      d1 = tripleVal;
+      d2 = tripleVal;
+      d3 = tripleVal;
+    } else {
+      // Normal game (prevent accidental triple to strictly maintain 1 in 50 cycle)
+      d1 = Math.floor(Math.random() * 6) + 1;
+      d2 = Math.floor(Math.random() * 6) + 1;
+      d3 = Math.floor(Math.random() * 6) + 1;
+      if (d1 === d2 && d2 === d3) {
+        d3 = (d3 % 6) + 1; // Reroll to ensure exactly 1 triple per 50 games
+      }
+    }
+
     STATE.currentDice = [d1, d2, d3];
 
     // Sound & 3D CSS tumbling
@@ -546,10 +656,27 @@
       STATE.isRolling = false;
 
       if (STATE.nanBatEnabled) {
+        // RULE: "Lắc bát 10s nếu không mở thì bát sẽ tự mở, tự qua tay tiếp theo"
         STATE.isRevealing = true;
-        el.gameStatus.textContent = 'Nặn Bát để xem kết quả!';
+        STATE.revealTimeLeft = 10;
+        el.bowlTimerNum.textContent = '10';
+        el.gameStatus.textContent = 'Nặn Bát! (Tự mở sau 10s)';
         el.gameStatus.className = 'status-badge revealing';
         el.btnQuickOpen.style.display = 'inline-block';
+
+        STATE.bowlAutoTimerInterval = setInterval(() => {
+          STATE.revealTimeLeft--;
+          el.bowlTimerNum.textContent = STATE.revealTimeLeft;
+          if (STATE.revealTimeLeft <= 3 && STATE.revealTimeLeft > 0) {
+            window.soundEngine.playTick();
+          }
+
+          if (STATE.revealTimeLeft <= 0) {
+            clearInterval(STATE.bowlAutoTimerInterval);
+            finishRound(); // Auto-open bowl after 10s
+          }
+        }, 1000);
+
       } else {
         finishRound();
       }
@@ -557,6 +684,7 @@
   }
 
   function finishRound() {
+    clearInterval(STATE.bowlAutoTimerInterval);
     STATE.isRevealing = false;
     el.btnQuickOpen.style.display = 'none';
 
@@ -576,51 +704,58 @@
     const isTriple = (d1 === d2 && d2 === d3);
     const isTai = total >= 11;
     const isEven = (total % 2 === 0);
-    const winner = isTai ? 'TAI' : 'XIU';
+
+    // RULE: "chữ sau khi mở bát ví dụ 5+5+1=11 thì ghi là Tài chứ không phải Tai"
+    const winner = isTai ? 'Tài' : 'Xỉu';
 
     // Update Result Banner
-    el.scoreBreakdown.textContent = `${d1} + ${d2} + ${d3}`;
+    el.scoreBreakdown.textContent = `${d1} + ${d2} + ${d3} = ${total}`;
     el.totalScore.textContent = total;
-    el.winnerTitle.textContent = isTriple ? `BÃO ${d1} - ${winner}` : winner;
-    el.winnerTitle.className = `winner-title ${winner.toLowerCase()}`;
+    el.winnerTitle.textContent = isTriple ? `BÃO ${d1} - ${winner.toUpperCase()}` : winner.toUpperCase();
+    el.winnerTitle.className = `winner-title ${winner === 'Tài' ? 'tài' : 'xỉu'}`;
     el.resultBanner.classList.add('show');
 
     // Calculate Payouts for Current User
+    // TÀI / XỈU: Tỷ lệ 1 : 1.97 (Lãi 0.97)
+    // BÃO: Tỷ lệ 1 : 100 (Lãi 100 lần)
     const user = AUTH.getUser();
     let totalBet = 0;
     let netWin = 0;
     const betItems = [];
 
     if (user) {
-      // TÀI / XỈU (1:1)
+      // Cược TÀI (1:1.97)
       if (STATE.bets.tai > 0) {
         totalBet += STATE.bets.tai;
         betItems.push(`Tài: ${formatMoney(STATE.bets.tai)} ₫`);
         if (isTai) {
-          netWin += STATE.bets.tai;
-          user.balance += STATE.bets.tai * 2;
+          const payout = Math.floor(STATE.bets.tai * 1.97);
+          netWin += Math.floor(STATE.bets.tai * 0.97);
+          user.balance += payout;
         } else {
           netWin -= STATE.bets.tai;
         }
       }
 
+      // Cược XỈU (1:1.97)
       if (STATE.bets.xiu > 0) {
         totalBet += STATE.bets.xiu;
         betItems.push(`Xỉu: ${formatMoney(STATE.bets.xiu)} ₫`);
         if (!isTai) {
-          netWin += STATE.bets.xiu;
-          user.balance += STATE.bets.xiu * 2;
+          const payout = Math.floor(STATE.bets.xiu * 1.97);
+          netWin += Math.floor(STATE.bets.xiu * 0.97);
+          user.balance += payout;
         } else {
           netWin -= STATE.bets.xiu;
         }
       }
 
-      // BÃO (1:30)
+      // Cược BÃO (1:100)
       if (STATE.bets.triple > 0) {
         totalBet += STATE.bets.triple;
         betItems.push(`Bão: ${formatMoney(STATE.bets.triple)} ₫`);
         if (isTriple) {
-          const tripleWin = STATE.bets.triple * 30;
+          const tripleWin = STATE.bets.triple * 100;
           netWin += tripleWin;
           user.balance += STATE.bets.triple + tripleWin;
         } else {
@@ -628,14 +763,14 @@
         }
       }
 
-      // CHẴN / LẺ (1:1.95)
+      // Cược CHẴN / LẺ (1:1.95)
       if (STATE.bets.even > 0) {
         totalBet += STATE.bets.even;
         betItems.push(`Chẵn: ${formatMoney(STATE.bets.even)} ₫`);
         if (isEven) {
-          const winAmt = Math.floor(STATE.bets.even * 0.95);
-          netWin += winAmt;
-          user.balance += STATE.bets.even + winAmt;
+          const winAmt = Math.floor(STATE.bets.even * 1.95);
+          netWin += Math.floor(STATE.bets.even * 0.95);
+          user.balance += winAmt;
         } else {
           netWin -= STATE.bets.even;
         }
@@ -645,9 +780,9 @@
         totalBet += STATE.bets.odd;
         betItems.push(`Lẻ: ${formatMoney(STATE.bets.odd)} ₫`);
         if (!isEven) {
-          const winAmt = Math.floor(STATE.bets.odd * 0.95);
-          netWin += winAmt;
-          user.balance += STATE.bets.odd + winAmt;
+          const winAmt = Math.floor(STATE.bets.odd * 1.95);
+          netWin += Math.floor(STATE.bets.odd * 0.95);
+          user.balance += winAmt;
         } else {
           netWin -= STATE.bets.odd;
         }
@@ -689,7 +824,7 @@
     Object.keys(STATE.bets).forEach(k => STATE.bets[k] = 0);
     updateBetDisplays();
 
-    // Sound & Popups
+    // Sound & Celebration
     if (netWin > 0) {
       if (isTriple) {
         window.soundEngine.playJackpot();
@@ -698,7 +833,7 @@
       }
 
       if (netWin >= 1000000) {
-        showWinModal(netWin, `${total} điểm - ${winner} [${d1}, ${d2}, ${d3}]`);
+        showWinModal(netWin, `${d1}+${d2}+${d3} = ${total} - ${winner}`);
       } else {
         showToast(`🎉 THẮNG CƯỢC: +${formatMoney(netWin)} ₫!`);
       }
@@ -707,14 +842,16 @@
       showToast(`Vận may sẽ đến ở phiên sau! (-${formatMoney(Math.abs(netWin))} ₫)`);
     }
 
-    el.gameStatus.textContent = `Kết quả: ${total} (${winner}) - Chuẩn bị ván mới`;
+    el.gameStatus.textContent = `Kết quả: ${d1}+${d2}+${d3}=${total} (${winner}) - Chuẩn bị ván mới`;
+    
+    // Automatically advance to the next hand after 5s
     setTimeout(() => {
       startSessionTimer();
-    }, 5500);
+    }, 5000);
   }
 
   function showWinModal(amount, detail) {
-    el.winModalTitle.textContent = amount >= 10000000 ? '👑 ĐẠI THẮNG VIP!' : '✨ THẮNG LỚN! ✨';
+    el.winModalTitle.textContent = amount >= 10000000 ? '👑 ĐẠI THẮNG TUMIZ!' : '✨ THẮNG LỚN! ✨';
     el.winModalAmount.textContent = `+ ${formatMoney(amount)} ₫`;
     el.winModalDetail.textContent = `Kết quả: ${detail}`;
     el.winModal.classList.add('active');
@@ -746,8 +883,9 @@
 
     recent.forEach(item => {
       const bead = document.createElement('div');
-      bead.className = `bead ${item.winner.toLowerCase()}`;
-      bead.textContent = item.winner === 'TAI' ? 'T' : 'X';
+      const isT = (item.winner === 'Tài');
+      bead.className = `bead ${isT ? 'tài' : 'xỉu'}`;
+      bead.textContent = isT ? 'T' : 'X';
       if (item.isTriple) {
         bead.className = 'bead triple';
         bead.textContent = 'B';
@@ -883,7 +1021,7 @@
   const BIDV_BANK = {
     bankName: 'BIDV',
     accountNumber: '8860252059',
-    accountName: 'BIDV CASINO VIP'
+    accountName: 'NHA CAI TUMIZ'
   };
 
   function openDepositModal() {
@@ -933,7 +1071,6 @@
       return;
     }
 
-    // Unique random transfer code: NAP TX + 4 digits
     const randomCode = Math.floor(1000 + Math.random() * 9000);
     const transferCode = `NAP TX${randomCode}`;
 
@@ -942,75 +1079,46 @@
       code: transferCode
     };
 
-    // Update Step 2 Bill Details
     el.billAmountDisplay.textContent = formatMoney(amt) + ' ₫';
     el.billMemoDisplay.textContent = transferCode;
     document.getElementById('btnCopyAmt').setAttribute('data-copy', amt);
     document.getElementById('btnCopyMemo').setAttribute('data-copy', transferCode);
 
-    // Generate VietQR URL for BIDV STK 8860252059
-    // Standard Napas 247 VietQR URL format:
+    // VietQR Generator
     const encodedMemo = encodeURIComponent(transferCode);
     const encodedName = encodeURIComponent(BIDV_BANK.accountName);
     const vietQrUrl = `https://img.vietqr.io/image/bidv-${BIDV_BANK.accountNumber}-compact2.png?amount=${amt}&addInfo=${encodedMemo}&accountName=${encodedName}`;
 
     el.vietQrImg.src = vietQrUrl;
 
-    // Switch view to Step 2
     el.depositStep1.classList.add('hidden');
     el.depositStep2.classList.remove('hidden');
     window.soundEngine.playChip();
   }
 
-  function confirmDepositTransfer() {
+  // RULE: "về lệnh nạp tiền, thì sẽ chuyển khoản số tiền vào tk tao sau đó sẽ có thông báo để t có thể tự tay add tiền vào tài khoản của họ"
+  function submitDepositRequestToAdmin() {
     const user = AUTH.getUser();
     if (!user) return;
 
     const { amount, code } = STATE.pendingDeposit;
+    const timeNow = new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN');
 
-    // Open Check Tx Modal
-    el.checkTxTitle.textContent = 'Đang Kiểm Tra Giao Dịch BIDV...';
-    el.checkTxDesc.innerHTML = `Hệ thống đang kết nối cổng BIDV với số tài khoản <strong>${BIDV_BANK.accountNumber}</strong> để đối soát nội dung: <strong>${code}</strong>...`;
-    el.txProgressFill.style.width = '0%';
-    el.checkTxModal.classList.add('active');
+    // Add to user's deposit list as PENDING
+    if (!user.deposits) user.deposits = [];
+    user.deposits.unshift({
+      code: code,
+      amount: amount,
+      bank: 'BIDV',
+      stk: BIDV_BANK.accountNumber,
+      time: timeNow,
+      status: 'Chờ Duyệt'
+    });
 
-    // Simulate bank gateway verification progress (3 seconds)
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
-      el.txProgressFill.style.width = `${progress}%`;
+    AUTH.save();
+    closeDepositModal();
 
-      if (progress >= 100) {
-        clearInterval(interval);
-
-        setTimeout(() => {
-          // Success! Add balance to user
-          user.balance += amount;
-
-          // Save transaction to user deposit history
-          if (!user.deposits) user.deposits = [];
-          user.deposits.unshift({
-            code: code,
-            amount: amount,
-            bank: 'BIDV',
-            stk: BIDV_BANK.accountNumber,
-            time: new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN'),
-            status: 'Thành Công'
-          });
-
-          AUTH.save();
-          updateAuthHeaderUI();
-
-          // Close check modal and deposit modal
-          el.checkTxModal.classList.remove('active');
-          closeDepositModal();
-
-          // Celebration
-          window.soundEngine.playJackpot();
-          showToast(`🎉 NẠP THÀNH CÔNG: +${formatMoney(amount)} ₫ vào tài khoản!`, 3500);
-        }, 500);
-      }
-    }, 250);
+    showToast(`📩 Đã gửi lệnh nạp ${formatMoney(amount)} ₫. Vui lòng chờ Admin Tumiz kiểm tra BIDV và duyệt tiền!`, 4000);
   }
 
   function renderDepositHistoryTable() {
@@ -1024,19 +1132,359 @@
       return;
     }
 
-    el.depositHistoryBody.innerHTML = user.deposits.map(d => `
-      <tr>
-        <td><strong>${d.code}</strong></td>
-        <td class="win-text">+${formatMoney(d.amount)} ₫</td>
-        <td>${d.bank} (${d.stk})</td>
-        <td><code>${d.code}</code></td>
-        <td>${d.time}</td>
-        <td><span class="badge-success" style="color: #34d399; font-weight:800;">✅ ${d.status}</span></td>
-      </tr>
-    `).join('');
+    el.depositHistoryBody.innerHTML = user.deposits.map(d => {
+      const isSuccess = (d.status === 'Thành Công');
+      const statusBadge = isSuccess 
+        ? '<span style="color:#34d399; font-weight:800;">✅ Thành Công</span>'
+        : (d.status === 'Từ Chối' 
+          ? '<span style="color:#ef4444; font-weight:800;">❌ Từ Chối</span>'
+          : '<span style="color:#f59e0b; font-weight:800;">⏳ Chờ Duyệt</span>');
+
+      return `
+        <tr>
+          <td><strong>${d.code}</strong></td>
+          <td class="${isSuccess ? 'win-text' : ''}">+${formatMoney(d.amount)} ₫</td>
+          <td>${d.bank} (${d.stk})</td>
+          <td><code>${d.code}</code></td>
+          <td>${d.time}</td>
+          <td>${statusBadge}</td>
+        </tr>
+      `;
+    }).join('');
   }
 
-  // Copy to clipboard helper
+  // --- WITHDRAWAL SYSTEM (YÊU CẦU MỚI) ---
+  function openWithdrawModal() {
+    const user = AUTH.getUser();
+    if (!user) {
+      showToast('Vui lòng đăng nhập trước khi rút tiền!');
+      openAuthModal('login');
+      return;
+    }
+
+    el.withdrawAvailBalance.textContent = formatMoney(user.balance) + ' ₫';
+    el.withdrawModal.classList.add('active');
+    switchWithdrawTab('create');
+  }
+
+  function closeWithdrawModal() {
+    el.withdrawModal.classList.remove('active');
+  }
+
+  function switchWithdrawTab(tab) {
+    if (tab === 'create') {
+      el.tabBtnCreateWithdraw.classList.add('active');
+      el.tabBtnWithdrawHistory.classList.remove('active');
+      el.withdrawContentCreate.classList.remove('hidden');
+      el.withdrawContentHistory.classList.add('hidden');
+    } else {
+      el.tabBtnWithdrawHistory.classList.add('active');
+      el.tabBtnCreateWithdraw.classList.remove('active');
+      el.withdrawContentHistory.classList.remove('hidden');
+      el.withdrawContentCreate.classList.add('hidden');
+      renderWithdrawHistoryTable();
+    }
+  }
+
+  function submitWithdrawRequest(e) {
+    e.preventDefault();
+    const user = AUTH.getUser();
+    if (!user) return;
+
+    const bank = el.withdrawBank.value;
+    const stk = el.withdrawStk.value.trim();
+    const name = el.withdrawName.value.trim().toUpperCase();
+    const amount = parseInt(el.withdrawAmount.value, 10);
+
+    if (!bank) {
+      showToast('Vui lòng chọn ngân hàng nhận tiền!');
+      return;
+    }
+    if (!stk || stk.length < 6) {
+      showToast('Số tài khoản nhận tiền không hợp lệ!');
+      return;
+    }
+    if (!name || name.length < 3) {
+      showToast('Vui lòng điền tên chủ tài khoản!');
+      return;
+    }
+    if (isNaN(amount) || amount < 50000) {
+      showToast('Số tiền rút tối thiểu là 50.000 ₫!');
+      return;
+    }
+    if (user.balance < amount) {
+      showToast('Số dư khả dụng không đủ để rút số tiền này!');
+      return;
+    }
+
+    // Deduct on-hold balance
+    user.balance -= amount;
+
+    const randomCode = Math.floor(1000 + Math.random() * 9000);
+    const withdrawCode = `RUT TX${randomCode}`;
+    const timeNow = new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN');
+
+    if (!user.withdrawals) user.withdrawals = [];
+    user.withdrawals.unshift({
+      code: withdrawCode,
+      amount: amount,
+      bank: bank,
+      stk: stk,
+      name: name,
+      time: timeNow,
+      status: 'Chờ Admin Chuyển Tiền'
+    });
+
+    AUTH.save();
+    updateAuthHeaderUI();
+    closeWithdrawModal();
+
+    window.soundEngine.playWin();
+    showToast(`🚀 Đã gửi lệnh rút ${formatMoney(amount)} ₫ về Admin Tumiz để chuyển khoản cho bạn!`, 4000);
+  }
+
+  function renderWithdrawHistoryTable() {
+    const user = AUTH.getUser();
+    if (!user || !user.withdrawals || user.withdrawals.length === 0) {
+      el.withdrawHistoryBody.innerHTML = `
+        <tr class="empty-row">
+          <td colspan="6">Chưa có lệnh rút tiền nào.</td>
+        </tr>
+      `;
+      return;
+    }
+
+    el.withdrawHistoryBody.innerHTML = user.withdrawals.map(w => {
+      const isSuccess = (w.status === 'Đã Chuyển Tiền');
+      const isRejected = (w.status === 'Từ Chối');
+      const statusBadge = isSuccess 
+        ? '<span style="color:#34d399; font-weight:800;">✅ Đã Chuyển Tiền</span>'
+        : (isRejected 
+          ? '<span style="color:#ef4444; font-weight:800;">❌ Đã Từ Chối (Hoàn Tiền)</span>'
+          : '<span style="color:#f59e0b; font-weight:800;">⏳ Chờ Admin Chuyển</span>');
+
+      return `
+        <tr>
+          <td><strong>${w.code}</strong></td>
+          <td class="loss-text">-${formatMoney(w.amount)} ₫</td>
+          <td>${w.bank}</td>
+          <td>${w.stk} (${w.name})</td>
+          <td>${w.time}</td>
+          <td>${statusBadge}</td>
+        </tr>
+      `;
+    }).join('');
+  }
+
+  // --- ADMIN PANEL (NHÀ CÁI TUMIZ DASHBOARD) ---
+  function openAdminModal() {
+    el.adminModal.classList.add('active');
+    switchAdminTab('dep');
+    refreshAdminData();
+  }
+
+  function closeAdminModal() {
+    el.adminModal.classList.remove('active');
+  }
+
+  function switchAdminTab(tab) {
+    el.tabBtnAdminDep.classList.toggle('active', tab === 'dep');
+    el.tabBtnAdminWithdraw.classList.toggle('active', tab === 'withdraw');
+    el.tabBtnAdminInflate.classList.toggle('active', tab === 'inflate');
+
+    el.adminContentDep.classList.toggle('hidden', tab !== 'dep');
+    el.adminContentWithdraw.classList.toggle('hidden', tab !== 'withdraw');
+    el.adminContentInflate.classList.toggle('hidden', tab !== 'inflate');
+  }
+
+  function refreshAdminData() {
+    let totalCirculating = 0;
+    let userCount = 0;
+    let pendingDep = [];
+    let pendingWithdraw = [];
+
+    // Populate user dropdown
+    el.inflateUserSelect.innerHTML = '';
+
+    Object.keys(AUTH.users).forEach(uname => {
+      const u = AUTH.users[uname];
+      userCount++;
+      totalCirculating += (u.balance || 0);
+
+      const opt = document.createElement('option');
+      opt.value = uname;
+      opt.textContent = `${uname} (Số dư: ${formatMoney(u.balance)} ₫)`;
+      el.inflateUserSelect.appendChild(opt);
+
+      // Collect pending deposits
+      (u.deposits || []).forEach((d, idx) => {
+        if (d.status === 'Chờ Duyệt') {
+          pendingDep.push({ ...d, username: uname, depIndex: idx });
+        }
+      });
+
+      // Collect pending withdrawals
+      (u.withdrawals || []).forEach((w, idx) => {
+        if (w.status === 'Chờ Admin Chuyển Tiền') {
+          pendingWithdraw.push({ ...w, username: uname, withIndex: idx });
+        }
+      });
+    });
+
+    el.adminTotalUsers.textContent = userCount;
+    el.adminTotalMoney.textContent = formatMoney(totalCirculating) + ' ₫';
+    el.adminPendingDepCount.textContent = pendingDep.length;
+    el.adminPendingWithdrawCount.textContent = pendingWithdraw.length;
+    el.badgePendingDep.textContent = pendingDep.length;
+    el.badgePendingWithdraw.textContent = pendingWithdraw.length;
+
+    // Render Deposit approval table
+    if (pendingDep.length === 0) {
+      el.adminDepListBody.innerHTML = `
+        <tr class="empty-row"><td colspan="6">Không có lệnh nạp tiền nào đang chờ duyệt.</td></tr>
+      `;
+    } else {
+      el.adminDepListBody.innerHTML = pendingDep.map(d => `
+        <tr>
+          <td><strong>${d.code}</strong></td>
+          <td><span style="color:#38bdf8; font-weight:800;">${d.username}</span></td>
+          <td class="win-text">+${formatMoney(d.amount)} ₫</td>
+          <td><code>${d.code}</code></td>
+          <td>${d.time}</td>
+          <td>
+            <button class="btn-adm-action btn-approve" data-user="${d.username}" data-idx="${d.depIndex}" data-amt="${d.amount}">
+              ✅ DUYỆT & CỘNG TIỀN
+            </button>
+            <button class="btn-adm-action btn-reject" data-user="${d.username}" data-idx="${d.depIndex}">
+              ❌ HỦY
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    // Render Withdrawal approval table
+    if (pendingWithdraw.length === 0) {
+      el.adminWithdrawListBody.innerHTML = `
+        <tr class="empty-row"><td colspan="7">Không có yêu cầu rút tiền nào đang chờ xử lý.</td></tr>
+      `;
+    } else {
+      el.adminWithdrawListBody.innerHTML = pendingWithdraw.map(w => `
+        <tr>
+          <td><strong>${w.code}</strong></td>
+          <td><span style="color:#38bdf8; font-weight:800;">${w.username}</span></td>
+          <td class="win-text">${formatMoney(w.amount)} ₫</td>
+          <td><strong>${w.bank}</strong></td>
+          <td><code>${w.stk}</code></td>
+          <td>${w.name}</td>
+          <td>
+            <button class="btn-adm-action btn-approve" data-type="with-ok" data-user="${w.username}" data-idx="${w.withIndex}">
+              ✅ ĐÃ CHUYỂN TIỀN
+            </button>
+            <button class="btn-adm-action btn-reject" data-type="with-cancel" data-user="${w.username}" data-idx="${w.withIndex}" data-amt="${w.amount}">
+              ❌ TỪ CHỐI & HOÀN TIỀN
+            </button>
+          </td>
+        </tr>
+      `).join('');
+    }
+  }
+
+  // Admin Actions Click Delegations
+  function setupAdminDelegations() {
+    // Deposit table buttons
+    el.adminDepListBody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-adm-action');
+      if (!btn) return;
+
+      const uname = btn.getAttribute('data-user');
+      const idx = parseInt(btn.getAttribute('data-idx'), 10);
+      const user = AUTH.users[uname];
+      if (!user || !user.deposits || !user.deposits[idx]) return;
+
+      if (btn.classList.contains('btn-approve')) {
+        const amt = parseInt(btn.getAttribute('data-amt'), 10);
+        user.balance += amt;
+        user.deposits[idx].status = 'Thành Công';
+        AUTH.save();
+        updateAuthHeaderUI();
+        refreshAdminData();
+        window.soundEngine.playJackpot();
+        showToast(`✅ Đã duyệt cộng +${formatMoney(amt)} ₫ cho tài khoản [${uname}]!`);
+      } else {
+        user.deposits[idx].status = 'Từ Chối';
+        AUTH.save();
+        refreshAdminData();
+        window.soundEngine.playLoss();
+        showToast(`❌ Đã từ chối lệnh nạp của [${uname}]!`);
+      }
+    });
+
+    // Withdrawal table buttons
+    el.adminWithdrawListBody.addEventListener('click', (e) => {
+      const btn = e.target.closest('.btn-adm-action');
+      if (!btn) return;
+
+      const uname = btn.getAttribute('data-user');
+      const idx = parseInt(btn.getAttribute('data-idx'), 10);
+      const user = AUTH.users[uname];
+      if (!user || !user.withdrawals || !user.withdrawals[idx]) return;
+
+      const actionType = btn.getAttribute('data-type');
+      if (actionType === 'with-ok') {
+        user.withdrawals[idx].status = 'Đã Chuyển Tiền';
+        AUTH.save();
+        refreshAdminData();
+        window.soundEngine.playWin();
+        showToast(`✅ Đã xác nhận chuyển tiền thành công cho [${uname}]!`);
+      } else {
+        // Refund on-hold amount back to user
+        const amt = parseInt(btn.getAttribute('data-amt'), 10);
+        user.balance += amt;
+        user.withdrawals[idx].status = 'Từ Chối';
+        AUTH.save();
+        updateAuthHeaderUI();
+        refreshAdminData();
+        window.soundEngine.playLoss();
+        showToast(`❌ Đã hủy lệnh rút và hoàn trả ${formatMoney(amt)} ₫ cho [${uname}]!`);
+      }
+    });
+
+    // Inflation control buttons
+    el.btnInflateAdd.addEventListener('click', () => {
+      const uname = el.inflateUserSelect.value;
+      const amt = parseInt(el.inflateAmount.value, 10);
+      if (!uname || isNaN(amt) || amt <= 0) return;
+
+      const user = AUTH.users[uname];
+      if (user) {
+        user.balance += amt;
+        AUTH.save();
+        updateAuthHeaderUI();
+        refreshAdminData();
+        window.soundEngine.playJackpot();
+        showToast(`➕ BƠM TIỀN: Đã cộng +${formatMoney(amt)} ₫ vào tài khoản [${uname}]!`);
+      }
+    });
+
+    el.btnInflateSub.addEventListener('click', () => {
+      const uname = el.inflateUserSelect.value;
+      const amt = parseInt(el.inflateAmount.value, 10);
+      if (!uname || isNaN(amt) || amt <= 0) return;
+
+      const user = AUTH.users[uname];
+      if (user) {
+        user.balance = Math.max(0, user.balance - amt);
+        AUTH.save();
+        updateAuthHeaderUI();
+        refreshAdminData();
+        window.soundEngine.playLoss();
+        showToast(`➖ HÚT TIỀN: Đã trừ -${formatMoney(amt)} ₫ khỏi tài khoản [${uname}] để giảm lạm phát!`);
+      }
+    });
+  }
+
+  // --- CLIPBOARD HELPER ---
   function setupCopyButtons() {
     document.addEventListener('click', (e) => {
       const btn = e.target.closest('.btn-copy');
@@ -1056,13 +1504,10 @@
     });
   }
 
-  // --- EVENT LISTENERS ---
+  // --- EVENT SETUP ---
   function setupEvents() {
     // Auth open / close
-    el.btnUserMenu.addEventListener('click', () => {
-      openAuthModal('login');
-    });
-
+    el.btnUserMenu.addEventListener('click', () => openAuthModal('login'));
     el.btnLogout.addEventListener('click', () => {
       AUTH.logout();
       updateAuthHeaderUI();
@@ -1070,10 +1515,7 @@
       showToast('Đã đăng xuất tài khoản!');
       openAuthModal('login');
     });
-
     el.btnCloseAuth.addEventListener('click', closeAuthModal);
-
-    // Auth tab buttons
     el.tabBtnLogin.addEventListener('click', () => switchAuthTab('login'));
     el.tabBtnRegister.addEventListener('click', () => switchAuthTab('register'));
 
@@ -1088,7 +1530,7 @@
         renderUserHistoryTable();
         closeAuthModal();
         window.soundEngine.playWin();
-        showToast(`Xin chào mừng, ${res.user.username}!`);
+        showToast(`Chào mừng trở lại, ${res.user.username}!`);
       } else {
         showToast(res.message);
         window.soundEngine.playLoss();
@@ -1113,14 +1555,14 @@
         renderUserHistoryTable();
         closeAuthModal();
         window.soundEngine.playJackpot();
-        showToast(`🎉 Đăng ký thành công! Bạn nhận được +100.000 ₫ tân thủ!`, 3000);
+        showToast(`🎉 Đăng ký thành công! Nhận ngay +100.000 ₫ tân thủ!`, 3000);
       } else {
         showToast(res.message);
         window.soundEngine.playLoss();
       }
     });
 
-    // Quick Guest Button
+    // Guest login
     el.btnQuickGuest.addEventListener('click', () => {
       const guestName = 'khach_' + Math.floor(1000 + Math.random() * 9000);
       AUTH.register(guestName, '123456');
@@ -1131,13 +1573,12 @@
       showToast(`Chơi với tài khoản: ${guestName} (+100K vốn)!`);
     });
 
-    // Deposit Modal open / close
+    // Deposit Modal events
     el.btnOpenDeposit.addEventListener('click', openDepositModal);
     el.btnCloseDeposit.addEventListener('click', closeDepositModal);
     el.tabBtnCreateDep.addEventListener('click', () => switchDepositTab('create'));
     el.tabBtnDepHistory.addEventListener('click', () => switchDepositTab('history'));
 
-    // Deposit Quick Amounts
     document.querySelectorAll('.btn-quick-amt').forEach(btn => {
       btn.addEventListener('click', () => {
         document.querySelectorAll('.btn-quick-amt').forEach(b => b.classList.remove('active'));
@@ -1149,27 +1590,53 @@
 
     el.btnGenerateBill.addEventListener('click', generateDepositBill);
     el.btnBackStep1.addEventListener('click', resetDepositStep1);
-    el.btnConfirmTransfer.addEventListener('click', confirmDepositTransfer);
+    el.btnConfirmTransfer.addEventListener('click', submitDepositRequestToAdmin);
 
-    // Sound toggle
+    // Withdraw Modal events
+    el.btnOpenWithdraw.addEventListener('click', openWithdrawModal);
+    el.btnCloseWithdraw.addEventListener('click', closeWithdrawModal);
+    el.tabBtnCreateWithdraw.addEventListener('click', () => switchWithdrawTab('create'));
+    el.tabBtnWithdrawHistory.addEventListener('click', () => switchWithdrawTab('history'));
+    el.withdrawForm.addEventListener('submit', submitWithdrawRequest);
+
+    document.querySelectorAll('.btn-quick-withdraw').forEach(btn => {
+      if (btn.id === 'btnWithdrawAll') {
+        btn.addEventListener('click', () => {
+          const user = AUTH.getUser();
+          if (user) el.withdrawAmount.value = user.balance;
+        });
+      } else {
+        btn.addEventListener('click', () => {
+          el.withdrawAmount.value = btn.getAttribute('data-amt');
+        });
+      }
+    });
+
+    // Admin Dashboard events
+    el.btnOpenAdmin.addEventListener('click', openAdminModal);
+    el.btnCloseAdmin.addEventListener('click', closeAdminModal);
+    el.tabBtnAdminDep.addEventListener('click', () => switchAdminTab('dep'));
+    el.tabBtnAdminWithdraw.addEventListener('click', () => switchAdminTab('withdraw'));
+    el.tabBtnAdminInflate.addEventListener('click', () => switchAdminTab('inflate'));
+    el.btnRefreshDep.addEventListener('click', refreshAdminData);
+    el.btnRefreshWithdraw.addEventListener('click', refreshAdminData);
+    setupAdminDelegations();
+
+    // Mode & sound toggles
     el.soundToggleBtn.addEventListener('click', () => {
       const active = window.soundEngine.toggleSound();
       el.btnSound.textContent = active ? '🔊' : '🔇';
       showToast(active ? 'Đã bật âm thanh' : 'Đã tắt âm thanh');
     });
 
-    // Mode toggle (Nặn Bát)
     el.btnMode.addEventListener('click', () => {
       STATE.nanBatEnabled = !STATE.nanBatEnabled;
       el.modeText.textContent = STATE.nanBatEnabled ? '⚡ Nặn Bát: BẬT' : '🚀 Nặn Bát: TẮT';
       showToast(STATE.nanBatEnabled ? 'Đã bật chế độ Nặn Bát' : 'Đã chuyển sang chế độ Mở Nhanh');
     });
 
-    // Quick open bowl
     el.btnQuickOpen.addEventListener('click', () => {
-      if (STATE.isRevealing) {
-        finishRound();
-      }
+      if (STATE.isRevealing) finishRound();
     });
 
     // Chips selection
@@ -1190,12 +1657,7 @@
       });
     });
 
-    // Betting Utility buttons
-    el.btnRollNow.addEventListener('click', () => {
-      if (STATE.isRolling || STATE.isRevealing) return;
-      triggerRoll();
-    });
-
+    // Betting utility buttons
     el.btnDouble.addEventListener('click', doubleBets);
     el.btnAllIn.addEventListener('click', allInBet);
     el.btnClearBet.addEventListener('click', clearAllBets);
@@ -1205,10 +1667,8 @@
       el.winModal.classList.remove('active');
     });
 
-    // Clipboard copy buttons
     setupCopyButtons();
 
-    // Initial audio context on first click
     window.addEventListener('click', () => {
       window.soundEngine.ensureContext();
     }, { once: true });
@@ -1217,17 +1677,18 @@
   // --- INITIALIZATION ---
   function init() {
     AUTH.load();
+    loadPersistedData();
     updateAuthHeaderUI();
     updateBetDisplays();
     setupEvents();
     initBowlDrag();
 
-    // Initial 3D dice display: 3 - 4 - 5
-    position3DDice(1, 3);
-    position3DDice(2, 4);
-    position3DDice(3, 5);
+    // Initial 3D dice display: 5 - 5 - 1 = 11 (Tài)
+    position3DDice(1, 5);
+    position3DDice(2, 5);
+    position3DDice(3, 1);
 
-    // Initial session countdown
+    // Start countdown timer loop
     startSessionTimer();
   }
 
