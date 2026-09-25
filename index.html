@@ -53,6 +53,9 @@
           <button id="btnOpenAdmin" class="btn-action btn-admin-badge hidden" title="Bảng quản trị nhà cái (Chỉ Admin)">
             <span class="icon">👑</span> Quản Trị
           </button>
+          <button id="btnOpen8xbetAd" class="btn-action btn-8xbet-badge" title="Đối tác tài trợ chính thức: 8XBET (Cá độ bóng đá & thể thao)">
+            <span class="icon">⚽</span> 8XBET
+          </button>
           <button id="btnSound" class="btn-action btn-icon" title="Bật/Tắt âm thanh">
             <span id="soundIcon">🔊</span>
           </button>
@@ -376,6 +379,86 @@
       </div>
     </div>
 
+    <!-- First Bet 100% Refund Celebration Modal -->
+    <div id="firstBetRefundModal" class="win-modal">
+      <div class="win-modal-content refund-content">
+        <div class="refund-badge-top">🛡️ BẢO HIỂM TÂN THỦ HOÀN TIỀN 100% 🛡️</div>
+        <div class="refund-icon-hero">🛡️💰</div>
+        <h2 id="refundModalTitle">HOÀN TIỀN VÉ CƯỢC ĐẦU!</h2>
+        <div class="refund-amount" id="refundModalAmount">+ 20,000 ₫</div>
+        <p id="refundModalDetail" class="refund-detail">
+          Bạn vừa cược <strong id="refundBetAmountText">20.000 ₫</strong> và chưa gặp may mắn. Nhà Cái Tumiz đã kích hoạt gói <strong>Bảo Hiểm Tân Thủ</strong> và hoàn trả <strong>100% số tiền cược</strong> vào số dư tài khoản của bạn!
+        </p>
+        <div class="refund-note">
+          ⚡ <em>Từ ván tiếp theo, kết quả cược sẽ tính thắng / thua như bình thường. Chúc bạn may mắn!</em>
+        </div>
+        <button id="btnCloseRefundModal" class="btn-gold btn-refund-action">TIẾP TỤC CHƠI NGAY</button>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         MODAL 0: 8XBET SPONSOR POPUP (XUẤT HIỆN KHI MỚI VÀO, GIỮA MÀN HÌNH, CÓ DẤU X)
+         ==================================================================== -->
+    <div id="ad8xbetModal" class="casino-modal active">
+      <div class="modal-backdrop" id="ad8xbetBackdrop"></div>
+      <div class="modal-dialog ad-8xbet-dialog">
+        <!-- Close button 'X' -->
+        <button class="btn-close-ad" id="btnClose8xbetAd" title="Đóng quảng cáo (✕)">✕</button>
+
+        <div class="ad-8xbet-header">
+          <div class="ad-official-badge">
+            <span class="mcfc-crest">⚽</span>
+            <span>ĐỐI TÁC CÁ CƯỢC CHÍNH THỨC CỦA CLB MANCHESTER CITY TẠI CHÂU Á</span>
+          </div>
+          <div class="ad-brand-main">
+            <div class="ad-8xbet-logo">
+              <span class="brand-8">8</span><span class="brand-x">X</span><span class="brand-bet">BET</span>
+            </div>
+            <div class="ad-brand-tagline">TRANG CÁ ĐỘ BÓNG ĐÁ & CASINO ĐẲNG CẤP QUỐC TẾ</div>
+          </div>
+        </div>
+
+        <div class="ad-8xbet-body">
+          <div class="ad-match-hero">
+            <div class="hero-chip">🔥 TỶ LỆ KÈO NGOẠI HẠNG ANH & CÚP C1 CAO NHẤT THỊ TRƯỜNG</div>
+            <h3 class="hero-title">ĐẶT CƯỢC BÓNG ĐÁ - THẮNG LIỀN TAY CÙNG 8XBET</h3>
+            <p class="hero-desc">Hàng ngàn trận cầu đỉnh cao Ngoại Hạng Anh, Cúp C1, La Liga, Serie A với bảng kèo Châu Á, kèo Tài Xỉu trực tiếp hấp dẫn nhất!</p>
+          </div>
+
+          <div class="ad-perks-row">
+            <div class="ad-perk-card">
+              <div class="perk-icon">🎁</div>
+              <div class="perk-title">THƯỞNG NẠP ĐẦU 100%</div>
+              <div class="perk-desc">Tặng ngay tới <strong>8.888.000 ₫</strong> cho thành viên mới sảnh Thể Thao</div>
+            </div>
+            <div class="ad-perk-card">
+              <div class="perk-icon">⚽</div>
+              <div class="perk-title">HOÀN TRẢ CƯỢC 1.5%</div>
+              <div class="perk-desc">Hoàn tiền thể thao mỗi ngày không giới hạn doanh thu cược</div>
+            </div>
+            <div class="ad-perk-card">
+              <div class="perk-icon">⚡</div>
+              <div class="perk-title">NẠP RÚT 30 GIÂY</div>
+              <div class="perk-desc">Hỗ trợ tất cả ngân hàng Việt Nam, Momo, VietQR, USDT siêu tốc</div>
+            </div>
+          </div>
+
+          <div class="ad-ambassador-bar">
+            <span>🏆 Đại sứ thương hiệu: <strong>Teddy Sheringham & Emile Heskey</strong> | Đối tác CLB Manchester City</span>
+          </div>
+        </div>
+
+        <div class="ad-8xbet-footer">
+          <button type="button" class="btn-ad-cta" id="btnJoin8xbet">
+            ⚽ THAM GIA CƯỢC 8XBET NGAY
+          </button>
+          <button type="button" class="btn-ad-dismiss" id="btnDismiss8xbet">
+            ✕ Bỏ qua & Vào Nhà Cái Tumiz
+          </button>
+        </div>
+      </div>
+    </div>
+
     <!-- ====================================================================
          MODAL 1: AUTH (ĐĂNG NHẬP / ĐĂNG KÝ)
          ==================================================================== -->
@@ -414,7 +497,9 @@
 
         <!-- Register Form -->
         <form class="auth-form hidden" id="registerForm">
-          <div class="bonus-notice">🎁 Tặng ngay <strong>100.000 ₫</strong> tiền vốn trải nghiệm khi đăng ký!</div>
+          <div class="bonus-notice promo-refund">
+            🛡️ <strong>ĐẶC QUYỀN TÂN THỦ:</strong> Hoàn tiền 100% vé cược đầu tiên nếu thua (Áp dụng khi cược từ 10.000 ₫ trở lên)!
+          </div>
           <div class="form-group">
             <label for="regUsername">Tên đăng nhập mới:</label>
             <input type="text" id="regUsername" placeholder="Từ 3 - 20 ký tự (không dấu)..." required autocomplete="username">
@@ -484,6 +569,12 @@
             <button class="btn-primary-modal btn-generate-bill" id="btnGenerateBill">
               👉 TẠO LỆNH NẠP & LẤY MÃ VIETQR BIDV
             </button>
+
+            <div class="test-deposit-wrap">
+              <button type="button" class="btn-quick-test-dep" id="btnQuickTestDeposit">
+                ⚡ Nạp Thử Nghiệm 50.000 ₫ (Để test ngay ván cược 20k)
+              </button>
+            </div>
           </div>
 
           <!-- Step 2: Hóa đơn & VietQR (sau khi tạo lệnh) -->

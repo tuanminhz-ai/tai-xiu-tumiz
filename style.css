@@ -1537,4 +1537,323 @@ body {
   .quick-amounts { grid-template-columns: repeat(2, 1fr); }
   .admin-stats-bar { grid-template-columns: repeat(2, 1fr); }
   .pred-body { flex-direction: column; align-items: flex-start; }
+  .ad-perks-row { grid-template-columns: 1fr; }
 }
+
+/* ==========================================================================
+   8XBET SPONSOR POPUP & HEADER BADGE
+   ========================================================================== */
+.btn-8xbet-badge {
+  background: linear-gradient(135deg, rgba(2, 132, 199, 0.25) 0%, rgba(14, 165, 233, 0.45) 100%);
+  border: 1px solid #38bdf8;
+  color: #7dd3fc;
+  font-weight: 800;
+  box-shadow: 0 0 12px rgba(56, 189, 248, 0.25);
+}
+
+.btn-8xbet-badge:hover {
+  filter: brightness(1.2);
+  transform: translateY(-2px);
+  box-shadow: 0 0 20px rgba(56, 189, 248, 0.5);
+}
+
+.ad-8xbet-dialog {
+  max-width: 540px;
+  background: linear-gradient(160deg, #0b1528 0%, #071224 50%, #030814 100%);
+  border: 2px solid #0284c7;
+  border-radius: 24px;
+  box-shadow: 0 0 45px rgba(2, 132, 199, 0.45), 0 25px 60px rgba(0, 0, 0, 0.9);
+  padding: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.btn-close-ad {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 900;
+  cursor: pointer;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.25s ease;
+}
+
+.btn-close-ad:hover {
+  background: #ef4444;
+  border-color: #ef4444;
+  color: #fff;
+  transform: rotate(90deg) scale(1.1);
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.6);
+}
+
+.ad-8xbet-header {
+  background: linear-gradient(180deg, rgba(2, 132, 199, 0.35) 0%, rgba(3, 105, 161, 0.15) 100%);
+  border-bottom: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 24px 20px 16px 20px;
+  text-align: center;
+}
+
+.ad-official-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(2, 132, 199, 0.3);
+  border: 1px solid rgba(56, 189, 248, 0.5);
+  padding: 4px 12px;
+  border-radius: 20px;
+  color: #7dd3fc;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+}
+
+.ad-brand-main {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.ad-8xbet-logo {
+  font-size: 2.6rem;
+  font-weight: 900;
+  letter-spacing: 2px;
+  line-height: 1;
+}
+
+.ad-8xbet-logo .brand-8 { color: #f97316; }
+.ad-8xbet-logo .brand-x { color: #38bdf8; text-shadow: 0 0 15px rgba(56, 189, 248, 0.8); }
+.ad-8xbet-logo .brand-bet { color: #ffffff; }
+
+.ad-brand-tagline {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: #94a3b8;
+  letter-spacing: 1.5px;
+}
+
+.ad-8xbet-body {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ad-match-hero {
+  background: radial-gradient(circle at 50% 0%, rgba(56, 189, 248, 0.2) 0%, rgba(15, 23, 42, 0.6) 80%);
+  border: 1px solid rgba(56, 189, 248, 0.25);
+  border-radius: 14px;
+  padding: 14px 16px;
+  text-align: center;
+}
+
+.hero-chip {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  color: #f59e0b;
+  margin-bottom: 6px;
+}
+
+.hero-title {
+  font-size: 1.05rem;
+  font-weight: 900;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.hero-desc {
+  font-size: 0.78rem;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.ad-perks-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+
+.ad-perk-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(56, 189, 248, 0.2);
+  border-radius: 12px;
+  padding: 10px;
+  text-align: center;
+  transition: transform 0.2s, border-color 0.2s;
+}
+
+.ad-perk-card:hover {
+  transform: translateY(-2px);
+  border-color: #38bdf8;
+  background: rgba(56, 189, 248, 0.08);
+}
+
+.perk-icon { font-size: 1.5rem; margin-bottom: 4px; }
+.perk-title { font-size: 0.72rem; font-weight: 900; color: #38bdf8; margin-bottom: 2px; }
+.perk-desc { font-size: 0.65rem; color: #94a3b8; line-height: 1.3; }
+.perk-desc strong { color: #f59e0b; }
+
+.ad-ambassador-bar {
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  padding: 8px 12px;
+  text-align: center;
+  font-size: 0.72rem;
+  color: #94a3b8;
+}
+.ad-ambassador-bar strong { color: #e2e8f0; }
+
+.ad-8xbet-footer {
+  padding: 12px 20px 20px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.btn-ad-cta {
+  width: 100%;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #075985 100%);
+  border: 1px solid #38bdf8;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 900;
+  padding: 14px 20px;
+  border-radius: 14px;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(2, 132, 199, 0.5);
+  transition: all 0.2s ease;
+  animation: depositPulse 2.5s infinite;
+}
+
+.btn-ad-cta:hover {
+  filter: brightness(1.15);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(56, 189, 248, 0.6);
+}
+
+.btn-ad-dismiss {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 12px;
+  transition: color 0.2s;
+}
+
+.btn-ad-dismiss:hover {
+  color: #f1f5f9;
+  text-decoration: underline;
+}
+
+/* ==========================================================================
+   FIRST BET 100% REFUND CELEBRATION MODAL
+   ========================================================================== */
+.refund-content {
+  background: linear-gradient(145deg, #064e3b 0%, #065f46 50%, #022c22 100%);
+  border: 2px solid #10b981;
+  box-shadow: 0 0 50px rgba(16, 185, 129, 0.55), 0 20px 40px rgba(0, 0, 0, 0.9);
+  max-width: 440px;
+}
+
+.refund-badge-top {
+  display: inline-block;
+  background: rgba(16, 185, 129, 0.3);
+  border: 1px solid #34d399;
+  color: #a7f3d0;
+  font-weight: 900;
+  font-size: 0.75rem;
+  padding: 4px 14px;
+  border-radius: 20px;
+  margin-bottom: 12px;
+  letter-spacing: 1px;
+}
+
+.refund-icon-hero {
+  font-size: 3rem;
+  margin-bottom: 6px;
+  animation: pulseGlow 1.5s infinite;
+}
+
+.refund-amount {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: #34d399;
+  margin: 10px 0;
+  text-shadow: 0 0 20px rgba(52, 211, 153, 0.6);
+}
+
+.refund-detail {
+  font-size: 0.88rem;
+  color: #e2e8f0;
+  line-height: 1.5;
+  margin-bottom: 12px;
+}
+
+.refund-detail strong {
+  color: #fbbf24;
+}
+
+.refund-note {
+  font-size: 0.75rem;
+  color: #94a3b8;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 18px;
+}
+
+.btn-refund-action {
+  width: 100%;
+  padding: 12px;
+  font-size: 0.95rem;
+}
+
+/* Quick test deposit button in deposit modal */
+.test-deposit-wrap {
+  margin-top: 10px;
+  text-align: center;
+}
+
+.btn-quick-test-dep {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid #10b981;
+  color: #34d399;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 800;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.btn-quick-test-dep:hover {
+  background: rgba(16, 185, 129, 0.3);
+  transform: translateY(-1px);
+}
+
+.bonus-notice.promo-refund {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: #10b981;
+  color: #a7f3d0;
+}
+

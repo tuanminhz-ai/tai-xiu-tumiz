@@ -41,6 +41,8 @@
           password: '123',
           balance: 200000,
           vip: 1,
+          firstBetRefundEligible: true,
+          hasUsedFirstBetRefund: false,
           deposits: [
             {
               code: 'NAP TX8892',
@@ -54,6 +56,9 @@
           withdrawals: [],
           history: []
         };
+      } else if (this.users['demo'] && this.users['demo'].hasUsedFirstBetRefund === undefined) {
+        this.users['demo'].firstBetRefundEligible = true;
+        this.users['demo'].hasUsedFirstBetRefund = false;
       }
 
       // Master Admin House Account: tumiz
@@ -106,21 +111,15 @@
         return { success: false, message: 'Mật khẩu phải tối thiểu 4 ký tự!' };
       }
 
+      // RULE: "sửa lại đoạn đăng ký mới thay vì tặng 100 thì sẽ là hoàn tiền vé cược đầu khi đánh trên 10k, ví dụ đánh 20k thua thì vẫn sẽ được hoàn lại tiền sau đó thì mọi thứ như bình thường"
       this.users[username] = {
         username: username,
         password: password,
-        balance: 100000, // 100k starter bonus
+        balance: 0, // Không tặng 100k vốn ban đầu
         vip: 1,
-        deposits: [
-          {
-            code: 'BONUS TANTHU',
-            amount: 100000,
-            bank: 'NHÀ CÁI TUMIZ',
-            stk: '-',
-            time: new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN'),
-            status: 'Thành Công'
-          }
-        ],
+        firstBetRefundEligible: true, // Được bảo hiểm hoàn tiền 100% vé cược đầu tiên nếu cược >= 10.000 ₫
+        hasUsedFirstBetRefund: false,
+        deposits: [],
         withdrawals: [],
         history: []
       };
@@ -274,13 +273,26 @@
     historyBody: document.getElementById('historyBody'),
     winRateBadge: document.getElementById('winRateBadge'),
 
-    // Toast & Win Modal
+    // Toast & Win Modal & First Bet Refund Modal
     toast: document.getElementById('toast'),
     winModal: document.getElementById('winModal'),
     winModalTitle: document.getElementById('winModalTitle'),
     winModalAmount: document.getElementById('winModalAmount'),
     winModalDetail: document.getElementById('winModalDetail'),
     btnCloseWinModal: document.getElementById('btnCloseWinModal'),
+    firstBetRefundModal: document.getElementById('firstBetRefundModal'),
+    btnCloseRefundModal: document.getElementById('btnCloseRefundModal'),
+    refundModalAmount: document.getElementById('refundModalAmount'),
+    refundBetAmountText: document.getElementById('refundBetAmountText'),
+
+    // 8XBET Sponsor Modal
+    ad8xbetModal: document.getElementById('ad8xbetModal'),
+    btnClose8xbetAd: document.getElementById('btnClose8xbetAd'),
+    btnOpen8xbetAd: document.getElementById('btnOpen8xbetAd'),
+    ad8xbetBackdrop: document.getElementById('ad8xbetBackdrop'),
+    btnJoin8xbet: document.getElementById('btnJoin8xbet'),
+    btnDismiss8xbet: document.getElementById('btnDismiss8xbet'),
+    btnQuickTestDeposit: document.getElementById('btnQuickTestDeposit'),
 
     // Auth Modal
     authModal: document.getElementById('authModal'),
@@ -879,6 +891,36 @@
         }
       }
 
+      // Check First Bet 100% Refund Promotion:
+      // RULE: "hoàn tiền vé cược đầu khi đánh trên 10k, ví dụ đánh 20k thua thì vẫn sẽ được hoàn lại tiền sau đó thì mọi thứ như bình thường"
+      let isFirstBetRefunded = false;
+      let refundedAmount = 0;
+
+      if (user.firstBetRefundEligible && totalBet >= 10000) {
+        if (netWin < 0) {
+          // Player lost their qualifying first bet >= 10.000 ₫ -> 100% REFUND!
+          refundedAmount = Math.abs(netWin);
+          user.balance += refundedAmount;
+          netWin = 0; // Neutralized to 0 because money was refunded
+          isFirstBetRefunded = true;
+
+          // Record refund into deposit transaction list
+          if (!user.deposits) user.deposits = [];
+          user.deposits.unshift({
+            code: 'BẢO HIỂM HOÀN CƯỢC',
+            amount: refundedAmount,
+            bank: 'BẢO HIỂM TÂN THỦ 10K+',
+            stk: `PHIÊN #${STATE.sessionId}`,
+            time: new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN'),
+            status: 'Thành Công'
+          });
+        }
+
+        // Promo is consumed after first qualifying bet >= 10k
+        user.firstBetRefundEligible = false;
+        user.hasUsedFirstBetRefund = true;
+      }
+
       // Record to user's history
       const historyEntry = {
         id: STATE.sessionId,
@@ -888,6 +930,8 @@
         isTriple,
         totalBet,
         netWin,
+        isFirstBetRefunded,
+        refundedAmount,
         betSummary: betItems.join(' | ')
       };
 
@@ -916,7 +960,11 @@
     updateBetDisplays();
 
     // Sound & Celebration
-    if (netWin > 0) {
+    if (isFirstBetRefunded) {
+      window.soundEngine.playWin();
+      showFirstBetRefundModal(refundedAmount, totalBet);
+      showToast(`🛡️ BẢO HIỂM TÂN THỦ: Đã hoàn trả 100% tiền cược (+${formatMoney(refundedAmount)} ₫)!`, 5000);
+    } else if (netWin > 0) {
       if (isTriple) {
         window.soundEngine.playJackpot();
       } else {
@@ -939,6 +987,13 @@
     setTimeout(() => {
       startSessionTimer();
     }, 5000);
+  }
+
+  function showFirstBetRefundModal(refundAmount, betAmount) {
+    if (!el.firstBetRefundModal) return;
+    el.refundModalAmount.textContent = `+ ${formatMoney(refundAmount)} ₫`;
+    if (el.refundBetAmountText) el.refundBetAmountText.textContent = `${formatMoney(betAmount)} ₫`;
+    el.firstBetRefundModal.classList.add('active');
   }
 
   function showWinModal(amount, detail) {
@@ -1013,9 +1068,14 @@
     el.winRateBadge.textContent = `Tỉ lệ thắng: ${winRate}%`;
 
     el.historyBody.innerHTML = user.history.slice(0, 10).map(item => {
-      const outcomeClass = item.netWin > 0 ? 'win-text' : (item.netWin < 0 ? 'loss-text' : '');
-      const outcomeSign = item.netWin > 0 ? '+' : '';
-      const outcomeText = item.netWin === 0 ? 'Hòa' : `${outcomeSign}${formatMoney(item.netWin)} ₫`;
+      let outcomeClass = item.netWin > 0 ? 'win-text' : (item.netWin < 0 ? 'loss-text' : '');
+      let outcomeSign = item.netWin > 0 ? '+' : '';
+      let outcomeText = item.netWin === 0 ? 'Hòa' : `${outcomeSign}${formatMoney(item.netWin)} ₫`;
+
+      if (item.isFirstBetRefunded) {
+        outcomeClass = 'win-text';
+        outcomeText = `🛡️ Hoàn ${formatMoney(item.refundedAmount || item.totalBet)} ₫ (Bảo hiểm)`;
+      }
 
       return `
         <tr>
@@ -1748,7 +1808,7 @@
         renderUserHistoryTable();
         closeAuthModal();
         window.soundEngine.playJackpot();
-        showToast(`🎉 Đăng ký thành công! Nhận ngay +100.000 ₫ tân thủ!`, 3000);
+        showToast(`🎉 Đăng ký thành công! Kích hoạt đặc quyền: Hoàn tiền 100% vé cược đầu tiên nếu thua (khi cược từ 10.000 ₫ trở lên)!`, 4500);
       } else {
         showToast(res.message);
         window.soundEngine.playLoss();
@@ -1763,7 +1823,7 @@
       renderUserHistoryTable();
       closeAuthModal();
       window.soundEngine.playWin();
-      showToast(`Chơi với tài khoản: ${guestName} (+100K vốn)!`);
+      showToast(`Chơi với tài khoản khách: ${guestName}! Được hoàn tiền 100% vé cược đầu nếu thua (từ 10k)!`, 4500);
     });
 
     // Quick Master Admin Login button for Tumiz
@@ -1776,6 +1836,60 @@
       showToast(`👑 Đã đăng nhập tài khoản Nhà Cái [tumiz]!`);
       openAdminModal();
     });
+
+    // 8XBET Advertisement Modal events
+    const close8xbet = () => {
+      if (el.ad8xbetModal) el.ad8xbetModal.classList.remove('active');
+    };
+
+    const open8xbet = () => {
+      if (el.ad8xbetModal) el.ad8xbetModal.classList.add('active');
+    };
+
+    if (el.btnClose8xbetAd) el.btnClose8xbetAd.addEventListener('click', close8xbet);
+    if (el.btnDismiss8xbet) el.btnDismiss8xbet.addEventListener('click', close8xbet);
+    if (el.ad8xbetBackdrop) el.ad8xbetBackdrop.addEventListener('click', close8xbet);
+    if (el.btnOpen8xbetAd) el.btnOpen8xbetAd.addEventListener('click', open8xbet);
+    if (el.btnJoin8xbet) {
+      el.btnJoin8xbet.addEventListener('click', () => {
+        close8xbet();
+        showToast('⚽ Đang kết nối tới trang cá cược bóng đá 8XBET - Đối tác Manchester City...');
+      });
+    }
+
+    // First Bet Refund Modal close
+    if (el.btnCloseRefundModal) {
+      el.btnCloseRefundModal.addEventListener('click', () => {
+        if (el.firstBetRefundModal) el.firstBetRefundModal.classList.remove('active');
+      });
+    }
+
+    // Quick test deposit button in deposit modal
+    if (el.btnQuickTestDeposit) {
+      el.btnQuickTestDeposit.addEventListener('click', () => {
+        const user = AUTH.getUser();
+        if (!user) {
+          showToast('Vui lòng đăng nhập trước khi nạp thử nghiệm!');
+          openAuthModal('login');
+          return;
+        }
+        user.balance += 50000;
+        if (!user.deposits) user.deposits = [];
+        user.deposits.unshift({
+          code: 'NAP TEST50K',
+          amount: 50000,
+          bank: 'TEST THỬ NGHIỆM',
+          stk: '-',
+          time: new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN'),
+          status: 'Thành Công'
+        });
+        AUTH.save();
+        updateAuthHeaderUI();
+        closeDepositModal();
+        window.soundEngine.playChip();
+        showToast('✅ Đã nạp thử nghiệm +50.000 ₫! Bạn có thể cược 20.000 ₫ ngay để test tính năng hoàn tiền!');
+      });
+    }
 
     // Deposit Modal events
     el.btnOpenDeposit.addEventListener('click', openDepositModal);
