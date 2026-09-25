@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tài Xỉu VIP Casino - Lắc 3 Xúc Xắc 3D 6 Mặt</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;800;900&family=Playfair+Display:wght@700;900&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="casino-app">
+    <!-- Header: Logo, User Account, Balance, Sound Toggle, Mode -->
+    <header class="header">
+      <div class="brand">
+        <div class="brand-badge">VIP 999</div>
+        <div class="brand-title">
+          <h1>TÀI XỈU <span>CASINO</span></h1>
+          <p class="subtitle">≥ 11: TÀI | ≤ 10: XỈU</p>
+        </div>
+      </div>
+
+      <!-- User Profile & Balance -->
+      <div class="user-stats">
+        <!-- Account Info Block -->
+        <div class="account-block" id="accountBlock">
+          <div class="user-avatar-badge" id="btnUserMenu">
+            <span class="avatar-icon">👑</span>
+            <div class="user-meta">
+              <span class="user-name" id="displayUsername">Khách</span>
+              <span class="vip-tag" id="displayVip">VIP 1</span>
+            </div>
+          </div>
+          <button id="btnLogout" class="btn-logout" title="Đăng xuất khỏi tài khoản">Thoát</button>
+        </div>
+
+        <div class="balance-card">
+          <span class="label">SỐ DƯ KHẢ DỤNG</span>
+          <div class="amount-wrap">
+            <span class="currency">₫</span>
+            <span id="userBalance" class="amount">0</span>
+          </div>
+        </div>
+
+        <div class="header-actions">
+          <button id="btnOpenDeposit" class="btn-action btn-gold btn-deposit-highlight" title="Nạp tiền qua chuyển khoản BIDV">
+            <span class="icon">💳</span> Nạp Tiền
+          </button>
+          <button id="btnSound" class="btn-action btn-icon" title="Bật/Tắt âm thanh">
+            <span id="soundIcon">🔊</span>
+          </button>
+          <button id="btnMode" class="btn-action btn-mode" title="Đổi chế độ chơi">
+            <span id="modeText">⚡ Nặn Bát: BẬT</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Game Board -->
+    <main class="game-container">
+      
+      <!-- Top Info: Phiên & Đếm Ngược -->
+      <div class="session-bar">
+        <div class="session-id">
+          Phiên: <strong id="sessionId">#882910</strong>
+        </div>
+        
+        <div class="timer-display" id="timerBox">
+          <div class="timer-circle">
+            <svg viewBox="0 0 36 36" class="circular-chart">
+              <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+              <path id="timerProgress" class="circle" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+            </svg>
+            <span id="timerNumber">15</span>
+          </div>
+          <span class="timer-label" id="timerLabel">ĐẶT CƯỢC</span>
+        </div>
+
+        <div class="status-badge" id="gameStatus">
+          Chờ Đặt Cược...
+        </div>
+      </div>
+
+      <!-- Khu vực Đĩa Xóc 3D & Nặn Bát -->
+      <div class="shaker-arena">
+        <div class="dish-plate" id="dishPlate">
+          <!-- 3 Hột Xúc Xắc 3D 6 Mặt -->
+          <div class="dice-tray" id="diceTray">
+            
+            <!-- Dice 1 -->
+            <div class="dice-scene" id="diceScene1">
+              <div class="dice-shadow"></div>
+              <div class="cube" id="dice1">
+                <!-- Mặt 1: 1 chấm đỏ to chính giữa -->
+                <div class="face front face-1">
+                  <span class="pip pip-1 red"></span>
+                </div>
+                <!-- Mặt 6: 2 cột x 3 chấm đen -->
+                <div class="face back face-6">
+                  <span class="pip pip-1"></span>
+                  <span class="pip pip-2"></span>
+                  <span class="pip pip-3"></span>
+                  <span class="pip pip-4"></span>
+                  <span class="pip pip-5"></span>
+                  <span class="pip pip-6"></span>
+                </div>
+                <!-- Mặt 3: 3 chấm chéo đen -->
+                <div class="face right face-3">
+                  <span class="pip pip-1"></span>
+                  <span class="pip pip-2"></span>
+                  <span class="pip pip-3"></span>
+                </div>
+                <!-- Mặt 4: 4 chấm đỏ ở 4 góc -->
+                <div class="face left face-4">
+                  <span class="pip pip-1 red"></span>
+                  <span class="pip pip-2 red"></span>
+                  <span class="pip pip-3 red"></span>
+                  <span class="pip pip-4 red"></span>
+                </div>
+                <!-- Mặt 2: 2 chấm chéo đen -->
+                <div class="face top face-2">
+                  <span class="pip pip-1"></span>
+                  <span class="pip pip-2"></span>
+                </div>
+                <!-- Mặt 5: 4 góc + 1 tâm đen -->
+                <div class="face bottom face-5">
+                  <span class="pip pip-1"></span>
+                  <span class="pip pip-2"></span>
+                  <span class="pip pip-3"></span>
+                  <span class="pip pip-4"></span>
+                  <span class="pip pip-5"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dice 2 -->
+            <div class="dice-scene" id="diceScene2">
+              <div class="dice-shadow"></div>
+              <div class="cube" id="dice2">
+                <!-- Mặt 1: 1 chấm đỏ to chính giữa -->
+                <div class="face front face-1">
+                  <span class="pip pip-1 red"></span>
+                </div>
+                <!-- Mặt 6: 2 cột x 3 chấm đen -->
+                <div class="face back face-6">
+                  <span class="pip pip-1"></span>
+                  <span class="pip pip-2"></span>
+                  <span class="pip pip-3"></span>
+                  <span class="pip pip-4"></span>
+                  <span class="pip pip-5"></span>
+                  <span class="pip pip-6"></span>
+                </div>
+                <!-- Mặt 3: 3 chấm chéo đen -->
+                <div class="face right face-3">
+                  <span class="pip pip-1"></span>
+                  <span class="pip pip-2"></span>
+                  <span class="pip pip-3"></span>
+                </div>
+                <!-- Mặt 4: 4 chấm đỏ ở 4 góc -->
+                <div class="face left face-4">
+                  <span class="pip pip-1 red"></span>
+                  <span class="pip pip-2 red"></span>
+                  <span class="pip pip-3 red"></span>
+                  <span class="pip pip-4 red"></span>
+                </div>
+                <!-- Mặt 2: 2 chấm chéo đen -->
+                <div class="face top face-2">
+                  <span class="pip pip-1"></span>
+                  <span class="pip pip-2"></span>
+                </div>
+                <!-- Mặt 5: 4 góc + 1 tâm đen -->
+                <div class="face bottom face-5">
+                  <span class="pip pip-1"></span>
+                  <span class="pip pip-2"></span>
+                  <span class="pip pip-3"></span>
+                  <span class="pip pip-4"></span>
+                  <span class="pip pip-5"></span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Dice 3 -->
+            <div class="dice-scene" id="diceScene3">
+              <div class="dice-shadow"></div>
+              <div class="cube" id="dice3">
+                <!-- Mặt 1: 1 chấm đỏ to chính giữa -->
+                <div class="face front face-1">
+                  <span class="pip pip-1 red"></span>
+                </div>
+                <!-- Mặt 6: 2 cột x 3 chấm đen -->
+                <div class="face back face-6">
+                  <span class="pip pip-1"></span>
+                  <span class="pip pip-2"></span>
+                  <span class="pip pip-3"></span>
+                  <span class="pip pip-4"></span>
+                  <span class="pip pip-5"></span>
+                  <span class="pip pip-6"></span>
+                </div>
+                <!-- Mặt 3: 3 chấm chéo đen -->
+                <div class="face right face-3">
+                  <span class="pip pip-1"></span>
+                  <span class="pip pip-2"></span>
+                  <span class="pip pip-3"></span>
+                </div>
+                <!-- Mặt 4: 4 chấm đỏ ở 4 góc -->
+                <div class="face left face-4">
+                  <span class="pip pip-1 red"></span>
+                  <span class="pip pip-2 red"></span>
+                  <span class="pip pip-3 red"></span>
+                  <span class="pip pip-4 red"></span>
+                </div>
+                <!-- Mặt 2: 2 chấm chéo đen -->
+                <div class="face top face-2">
+                  <span class="pip pip-1"></span>
+                  <span class="pip pip-2"></span>
+                </div>
+                <!-- Mặt 5: 4 góc + 1 tâm đen -->
+                <div class="face bottom face-5">
+                  <span class="pip pip-1"></span>
+                  <span class="pip pip-2"></span>
+                  <span class="pip pip-3"></span>
+                  <span class="pip pip-4"></span>
+                  <span class="pip pip-5"></span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Chiếc Bát Hoàng Gia (Kéo rê để nặn bát) -->
+          <div class="bowl-overlay" id="bowlOverlay">
+            <div class="bowl-handle"></div>
+            <div class="bowl-pattern">🐉 VẠN SỰ NHƯ Ý 🐉</div>
+            <div class="bowl-hint" id="bowlHint">🖐 KÉO BÁT ĐỂ MỞ</div>
+          </div>
+
+          <!-- Result Tag hiển thị điểm khi mở bát -->
+          <div class="result-banner" id="resultBanner">
+            <span class="score-breakdown" id="scoreBreakdown">3 + 4 + 5</span>
+            <span class="total-score" id="totalScore">12</span>
+            <span class="winner-title" id="winnerTitle">TÀI</span>
+          </div>
+        </div>
+
+        <!-- Nút Mở Bát nhanh khi đang nặn bát -->
+        <div class="bowl-controls" id="bowlControls">
+          <button id="btnQuickOpen" class="btn-quick-open">🚀 Mở Nhanh</button>
+        </div>
+      </div>
+
+      <!-- Bàn Đặt Cược Chính: TÀI vs XỈU -->
+      <div class="betting-board">
+        <!-- Cửa XỈU: 4 - 10 -->
+        <div class="bet-spot bet-xiu" id="spotXiu" data-bet="xiu">
+          <div class="spot-glow"></div>
+          <div class="spot-header">
+            <div class="spot-title">XỈU</div>
+            <div class="spot-range">4 - 10</div>
+          </div>
+          <div class="spot-rate">1 Ăn 2</div>
+          <div class="spot-stats">
+            <span>Tổng cược: <b id="totalBetXiu">0 ₫</b></span>
+            <span>Số người: <b id="userCountXiu">142</b></span>
+          </div>
+          <div class="my-bet-badge" id="myBetXiu">
+            <span>Đã cược:</span>
+            <strong id="myBetXiuVal">0 ₫</strong>
+          </div>
+          <button class="btn-bet-hit" id="hitXiu">CƯỢC XỈU</button>
+        </div>
+
+        <!-- Cửa Trung Tâm: BÃO (Bộ ba đồng nhất 1:30) -->
+        <div class="bet-spot bet-triple" id="spotTriple" data-bet="triple">
+          <div class="spot-header">
+            <div class="spot-title-small">⚡ BÃO ⚡</div>
+            <div class="spot-range">3 Con Giống Nhau</div>
+          </div>
+          <div class="spot-rate gold-text">1 Ăn 30</div>
+          <div class="triple-icons">🎲 🎲 🎲</div>
+          <div class="my-bet-badge" id="myBetTriple">
+            <span>Đã cược:</span>
+            <strong id="myBetTripleVal">0 ₫</strong>
+          </div>
+          <button class="btn-bet-hit btn-triple-hit" id="hitTriple">CƯỢC BÃO</button>
+        </div>
+
+        <!-- Cửa TÀI: 11 - 17 -->
+        <div class="bet-spot bet-tai" id="spotTai" data-bet="tai">
+          <div class="spot-glow"></div>
+          <div class="spot-header">
+            <div class="spot-title">TÀI</div>
+            <div class="spot-range">11 - 17</div>
+          </div>
+          <div class="spot-rate">1 Ăn 2</div>
+          <div class="spot-stats">
+            <span>Tổng cược: <b id="totalBetTai">0 ₫</b></span>
+            <span>Số người: <b id="userCountTai">189</b></span>
+          </div>
+          <div class="my-bet-badge" id="myBetTai">
+            <span>Đã cược:</span>
+            <strong id="myBetTaiVal">0 ₫</strong>
+          </div>
+          <button class="btn-bet-hit" id="hitTai">CƯỢC TÀI</button>
+        </div>
+      </div>
+
+      <!-- Cửa Phụ: Chẵn / Lẻ -->
+      <div class="secondary-bets">
+        <div class="bet-spot-mini" id="spotEven" data-bet="even">
+          <div class="mini-title">CHẴN (Tổng 4,6,8,10,12,14,16)</div>
+          <div class="mini-rate">1 Ăn 1.95</div>
+          <div class="mini-my-bet" id="myBetEven">0 ₫</div>
+        </div>
+        <div class="bet-spot-mini" id="spotOdd" data-bet="odd">
+          <div class="mini-title">LẺ (Tổng 5,7,9,11,13,15,17)</div>
+          <div class="mini-rate">1 Ăn 1.95</div>
+          <div class="mini-my-bet" id="myBetOdd">0 ₫</div>
+        </div>
+      </div>
+
+      <!-- Khay Chọn Phỉnh & Thao Tác Cược -->
+      <div class="chip-rack-section">
+        <div class="chips-container">
+          <button class="chip chip-1k active" data-value="1000">
+            <span class="chip-inner">1K</span>
+          </button>
+          <button class="chip chip-5k" data-value="5000">
+            <span class="chip-inner">5K</span>
+          </button>
+          <button class="chip chip-10k" data-value="10000">
+            <span class="chip-inner">10K</span>
+          </button>
+          <button class="chip chip-50k" data-value="50000">
+            <span class="chip-inner">50K</span>
+          </button>
+          <button class="chip chip-100k" data-value="100000">
+            <span class="chip-inner">100K</span>
+          </button>
+          <button class="chip chip-500k" data-value="500000">
+            <span class="chip-inner">500K</span>
+          </button>
+          <button class="chip chip-1m" data-value="1000000">
+            <span class="chip-inner">1M</span>
+          </button>
+          <button class="chip chip-5m" data-value="5000000">
+            <span class="chip-inner">5M</span>
+          </button>
+        </div>
+
+        <div class="bet-action-buttons">
+          <button id="btnRollNow" class="btn-ctrl btn-roll" title="Bắt đầu lắc ngay">
+            🎲 LẮC NGAY
+          </button>
+          <button id="btnDouble" class="btn-ctrl btn-util" title="Nhân đôi cược">
+            ✖2 Gấp Đôi
+          </button>
+          <button id="btnAllIn" class="btn-ctrl btn-util btn-allin" title="Tất tay!">
+            🔥 ALL-IN
+          </button>
+          <button id="btnClearBet" class="btn-ctrl btn-util" title="Hủy các cược chưa lắc">
+            🗑️ Hủy Cược
+          </button>
+        </div>
+      </div>
+
+      <!-- Bảng Soi Cầu (Lịch Sử Xúc Xắc Chấm Đỏ / Chấm Xanh) -->
+      <section class="road-map-section">
+        <div class="road-header">
+          <div class="road-title">
+            <span>📊 BẢNG SOI CẦU TÀI XỈU</span>
+            <small>50 Phiên Gần Nhất</small>
+          </div>
+          <div class="road-stats">
+            <span class="stat-tag stat-tai">Tài: <strong id="statTaiCount">0</strong> (<span id="statTaiPct">50%</span>)</span>
+            <span class="stat-tag stat-xiu">Xỉu: <strong id="statXiuCount">0</strong> (<span id="statXiuPct">50%</span>)</span>
+            <span class="stat-tag stat-triple">Bão: <strong id="statTripleCount">0</strong></span>
+          </div>
+        </div>
+
+        <!-- Dãy chấm cầu tròn (Bead Plate) -->
+        <div class="bead-road-wrap">
+          <div class="bead-road" id="beadRoad">
+            <!-- Render các chấm tròn T (Đỏ) / X (Xanh) -->
+          </div>
+        </div>
+      </section>
+
+      <!-- Lịch Sử Cược Cá Nhân -->
+      <section class="history-section">
+        <div class="history-header">
+          <h3>📜 LỊCH SỬ CƯỢC CỦA BẠN</h3>
+          <span class="history-badge" id="winRateBadge">Thắng: 0%</span>
+        </div>
+        <div class="history-table-wrap">
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Phiên</th>
+                <th>Cửa Đặt</th>
+                <th>Tiền Cược</th>
+                <th>Kết Quả (3 Xúc Xắc)</th>
+                <th>Tổng Điểm</th>
+                <th>Thắng / Thua</th>
+              </tr>
+            </thead>
+            <tbody id="historyBody">
+              <tr class="empty-row">
+                <td colspan="6">Chưa có lịch sử ván cược. Hãy chọn phỉnh và đặt cược để bắt đầu!</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>🎲 Trò chơi Tài Xỉu mô phỏng giải trí - BIDV Banking Chuyển Khoản Demo - Chúc bạn may mắn!</p>
+    </footer>
+
+    <!-- Notification Toast Popup -->
+    <div id="toast" class="toast"></div>
+
+    <!-- Win Celebration Modal -->
+    <div id="winModal" class="win-modal">
+      <div class="win-modal-content">
+        <div class="win-sparkles">✨ 🎉 ✨</div>
+        <h2 id="winModalTitle">THẮNG LỚN!</h2>
+        <div class="win-amount" id="winModalAmount">+ 2,000,000 ₫</div>
+        <p id="winModalDetail">Kết quả: 12 - TÀI</p>
+        <button id="btnCloseWinModal" class="btn-gold">TIẾP TỤC CHƠI</button>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         MODAL 1: AUTH (ĐĂNG NHẬP / ĐĂNG KÝ)
+         ==================================================================== -->
+    <div id="authModal" class="casino-modal">
+      <div class="modal-backdrop"></div>
+      <div class="modal-dialog auth-dialog">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-icon">🔐</span>
+            <h2>TÀI KHOẢN CASINO VIP</h2>
+          </div>
+          <button class="btn-close-modal" id="btnCloseAuth">✕</button>
+        </div>
+
+        <!-- Auth Tabs -->
+        <div class="auth-tabs">
+          <button class="auth-tab active" id="tabBtnLogin">ĐĂNG NHẬP</button>
+          <button class="auth-tab" id="tabBtnRegister">ĐĂNG KÝ MỚI</button>
+        </div>
+
+        <!-- Login Form -->
+        <form class="auth-form" id="loginForm">
+          <div class="form-group">
+            <label for="loginUsername">Tên đăng nhập:</label>
+            <input type="text" id="loginUsername" placeholder="Nhập tên tài khoản..." required autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label for="loginPassword">Mật khẩu:</label>
+            <input type="password" id="loginPassword" placeholder="Nhập mật khẩu..." required autocomplete="current-password">
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary-modal">ĐĂNG NHẬP NGAY</button>
+            <button type="button" class="btn-quick-guest" id="btnQuickGuest">⚡ Chơi Nhanh (Khách Demo)</button>
+          </div>
+        </form>
+
+        <!-- Register Form -->
+        <form class="auth-form hidden" id="registerForm">
+          <div class="bonus-notice">🎁 Tặng ngay <strong>100.000 ₫</strong> tiền vốn trải nghiệm khi đăng ký!</div>
+          <div class="form-group">
+            <label for="regUsername">Tên đăng nhập mới:</label>
+            <input type="text" id="regUsername" placeholder="Từ 3 - 20 ký tự (không dấu)..." required autocomplete="username">
+          </div>
+          <div class="form-group">
+            <label for="regPassword">Mật khẩu:</label>
+            <input type="password" id="regPassword" placeholder="Tối thiểu 4 ký tự..." required autocomplete="new-password">
+          </div>
+          <div class="form-group">
+            <label for="regPasswordConfirm">Xác nhận mật khẩu:</label>
+            <input type="password" id="regPasswordConfirm" placeholder="Nhập lại mật khẩu..." required autocomplete="new-password">
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary-modal">TẠO TÀI KHOẢN MỚI</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         MODAL 2: NẠP TIỀN CHUYỂN KHOẢN BIDV (STK: 8860252059)
+         ==================================================================== -->
+    <div id="depositModal" class="casino-modal">
+      <div class="modal-backdrop"></div>
+      <div class="modal-dialog deposit-dialog">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-badge-bank">BIDV</span>
+            <div>
+              <h2>NẠP TIỀN CHUYỂN KHOẢN 24/7</h2>
+              <p class="modal-sub">Ngân hàng TMCP Đầu tư và Phát triển Việt Nam</p>
+            </div>
+          </div>
+          <button class="btn-close-modal" id="btnCloseDeposit">✕</button>
+        </div>
+
+        <!-- Deposit Tabs -->
+        <div class="deposit-tabs">
+          <button class="dep-tab active" id="tabBtnCreateDep">Chuyển Khoản & VietQR</button>
+          <button class="dep-tab" id="tabBtnDepHistory">Lịch Sử Nạp Tiền</button>
+        </div>
+
+        <!-- Tab 1: Form & VietQR Screen -->
+        <div class="dep-tab-content" id="depContentCreate">
+          
+          <!-- Step 1: Chọn số tiền -->
+          <div class="deposit-step-1" id="depositStep1">
+            <div class="step-title">Bước 1: Chọn số tiền muốn nạp</div>
+            <div class="quick-amounts">
+              <button class="btn-quick-amt" data-amt="50000">50.000 ₫</button>
+              <button class="btn-quick-amt" data-amt="100000">100.000 ₫</button>
+              <button class="btn-quick-amt active" data-amt="200000">200.000 ₫</button>
+              <button class="btn-quick-amt" data-amt="500000">500.000 ₫</button>
+              <button class="btn-quick-amt" data-amt="1000000">1.000.000 ₫</button>
+              <button class="btn-quick-amt" data-amt="2000000">2.000.000 ₫</button>
+              <button class="btn-quick-amt" data-amt="5000000">5.000.000 ₫</button>
+              <button class="btn-quick-amt" data-amt="10000000">10.000.000 ₫</button>
+            </div>
+
+            <div class="custom-amount-wrap">
+              <label for="customAmount">Hoặc nhập số tiền tùy ý (₫):</label>
+              <div class="custom-input-box">
+                <input type="number" id="customAmount" value="200000" min="10000" step="10000">
+                <span class="custom-suffix">VND</span>
+              </div>
+            </div>
+
+            <button class="btn-primary-modal btn-generate-bill" id="btnGenerateBill">
+              👉 TẠO LỆNH NẠP & LẤY MÃ VIETQR BIDV
+            </button>
+          </div>
+
+          <!-- Step 2: Hóa đơn & VietQR (sau khi tạo lệnh) -->
+          <div class="deposit-step-2 hidden" id="depositStep2">
+            <div class="step-title">Bước 2: Quét mã QR hoặc Chuyển khoản BIDV</div>
+            
+            <div class="bill-grid">
+              <!-- VietQR Container -->
+              <div class="qr-container">
+                <div class="qr-frame">
+                  <img id="vietQrImg" src="" alt="Mã VietQR BIDV 8860252059" class="qr-image">
+                  <div class="qr-laser"></div>
+                </div>
+                <div class="qr-caption">Quét bằng App Ngân hàng bất kỳ (BIDV, MB, VCB, Momo,...)</div>
+              </div>
+
+              <!-- Chi tiết thông tin chuyển khoản -->
+              <div class="bank-details-card">
+                <div class="bank-row">
+                  <span class="label">NGÂN HÀNG:</span>
+                  <div class="val-group">
+                    <strong class="highlight-bank">BIDV</strong>
+                    <span class="bank-sub">Ngân hàng TMCP Đầu tư & PT VN</span>
+                  </div>
+                </div>
+
+                <div class="bank-row">
+                  <span class="label">SỐ TÀI KHOẢN:</span>
+                  <div class="val-group">
+                    <strong class="highlight-stk" id="stkDisplay">8860252059</strong>
+                    <button class="btn-copy" data-copy="8860252059">📋 Sao Chép</button>
+                  </div>
+                </div>
+
+                <div class="bank-row">
+                  <span class="label">CHỦ TÀI KHOẢN:</span>
+                  <div class="val-group">
+                    <strong>BIDV VIP CASINO</strong>
+                  </div>
+                </div>
+
+                <div class="bank-row">
+                  <span class="label">SỐ TIỀN:</span>
+                  <div class="val-group">
+                    <strong class="highlight-amt" id="billAmountDisplay">200,000 ₫</strong>
+                    <button class="btn-copy" id="btnCopyAmt" data-copy="200000">📋 Sao Chép</button>
+                  </div>
+                </div>
+
+                <div class="bank-row highlight-row">
+                  <span class="label">NỘI DUNG CK:</span>
+                  <div class="val-group">
+                    <strong class="highlight-memo" id="billMemoDisplay">NAP TX8892</strong>
+                    <button class="btn-copy" id="btnCopyMemo" data-copy="NAP TX8892">📋 Sao Chép</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Cảnh báo quan trọng -->
+            <div class="transfer-warning">
+              ⚠️ <strong>LƯU Ý:</strong> Bạn phải điền chính xác <strong>Số tài khoản: 8860252059 (BIDV)</strong> và <strong>Nội dung chuyển khoản</strong> ở trên để hệ thống tự động kiểm tra và cộng tiền vào tài khoản!
+            </div>
+
+            <!-- Nút xác nhận giao dịch -->
+            <div class="bill-actions">
+              <button class="btn-confirm-transfer" id="btnConfirmTransfer">
+                ✅ TÔI ĐÃ CHUYỂN TIỀN (KIỂM TRA GIAO DỊCH)
+              </button>
+              <button class="btn-secondary-modal" id="btnBackStep1">
+                🔄 Chọn Số Tiền Khác
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Tab 2: Lịch sử nạp tiền -->
+        <div class="dep-tab-content hidden" id="depContentHistory">
+          <div class="dep-history-table-wrap">
+            <table class="history-table">
+              <thead>
+                <tr>
+                  <th>Mã GD</th>
+                  <th>Số Tiền</th>
+                  <th>Ngân Hàng</th>
+                  <th>Nội Dung</th>
+                  <th>Thời Gian</th>
+                  <th>Trạng Thái</th>
+                </tr>
+              </thead>
+              <tbody id="depositHistoryBody">
+                <tr class="empty-row">
+                  <td colspan="6">Chưa có giao dịch nạp tiền nào.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Modal Kiểm Tra Giao Dịch BIDV (Processing Animation) -->
+    <div id="checkTxModal" class="casino-modal">
+      <div class="modal-backdrop"></div>
+      <div class="modal-dialog check-tx-dialog">
+        <div class="tx-spinner-wrap">
+          <div class="tx-spinner"></div>
+          <div class="tx-bank-logo">BIDV</div>
+        </div>
+        <h3 id="checkTxTitle">Đang Kiểm Tra Giao Dịch BIDV...</h3>
+        <p id="checkTxDesc">Hệ thống đang kết nối cổng BIDV với số tài khoản <strong>8860252059</strong> để đối soát mã nội dung...</p>
+        <div class="tx-progress-bar">
+          <div class="tx-progress-fill" id="txProgressFill"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <script src="audio.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
