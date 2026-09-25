@@ -1890,3 +1890,25 @@ body {
   color: #a7f3d0;
 }
 
+/* Admin PIN Dialog & Security Styling */
+.pin-dialog {
+  max-width: 440px !important;
+  border-color: rgba(245, 158, 11, 0.6) !important;
+  box-shadow: 0 0 35px rgba(245, 158, 11, 0.25) !important;
+}
+
+.btn-admin-unlock {
+  background: var(--admin-gradient) !important;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.admin-tabs {
+  overflow-x: auto;
+  white-space: nowrap;
+  scrollbar-width: none;
+}
+.admin-tabs::-webkit-scrollbar {
+  display: none;
+}
+

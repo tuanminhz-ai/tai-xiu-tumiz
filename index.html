@@ -482,7 +482,6 @@
           <div class="form-actions">
             <button type="submit" class="btn-primary-modal">ĐĂNG NHẬP NGAY</button>
             <button type="button" class="btn-quick-guest" id="btnQuickGuest">⚡ Chơi Nhanh (Khách Demo)</button>
-            <button type="button" class="btn-quick-admin" id="btnQuickAdmin">👑 Đăng Nhập Nhà Cái (tumiz)</button>
           </div>
         </form>
 
@@ -505,6 +504,37 @@
           </div>
           <div class="form-actions">
             <button type="submit" class="btn-primary-modal">TẠO TÀI KHOẢN MỚI</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- ====================================================================
+         MODAL: ADMIN PIN VERIFICATION (BẢO VỆ MẬT KHẨU NHÀ CÁI)
+         ==================================================================== -->
+    <div id="adminPinModal" class="casino-modal">
+      <div class="modal-backdrop" id="adminPinBackdrop"></div>
+      <div class="modal-dialog auth-dialog pin-dialog">
+        <div class="modal-header">
+          <div class="modal-title-wrap">
+            <span class="modal-icon">🔐</span>
+            <div>
+              <h2>XÁC THỰC MẬT KHẨU NHÀ CÁI</h2>
+              <p class="modal-sub">Khu vực bảo mật tối cao dành riêng cho tài khoản tumiz</p>
+            </div>
+          </div>
+          <button class="btn-close-modal" id="btnCloseAdminPin">✕</button>
+        </div>
+        <form class="auth-form" id="adminPinForm">
+          <p class="pin-hint" style="color:#fcd34d; font-size:0.88rem; line-height:1.5; margin-bottom:12px;">
+            🛡️ Vui lòng nhập mật khẩu quản trị để mở Bảng Điều Khiển Nhà Cái Tumiz:
+          </p>
+          <div class="form-group">
+            <label for="adminPinInput">Mật khẩu Admin:</label>
+            <input type="password" id="adminPinInput" placeholder="Nhập mật khẩu Nhà Cái..." required autofocus>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="btn-primary-modal btn-admin-unlock">🔓 MỞ BẢNG QUẢN TRỊ</button>
           </div>
         </form>
       </div>
@@ -845,9 +875,11 @@
 
         <!-- Admin Tabs -->
         <div class="admin-tabs">
-          <button class="admin-tab active" id="tabBtnAdminDep">📥 Duyệt Nạp Tiền (<span id="badgePendingDep">0</span>)</button>
-          <button class="admin-tab" id="tabBtnAdminWithdraw">📤 Duyệt Rút Tiền (<span id="badgePendingWithdraw">0</span>)</button>
-          <button class="admin-tab" id="tabBtnAdminInflate">⚖️ Kiểm Soát Lạm Phát (Bơm/Hút)</button>
+          <button class="admin-tab active" id="tabBtnAdminDep">📥 Duyệt Nạp (<span id="badgePendingDep">0</span>)</button>
+          <button class="admin-tab" id="tabBtnAdminWithdraw">📤 Duyệt Rút (<span id="badgePendingWithdraw">0</span>)</button>
+          <button class="admin-tab" id="tabBtnAdminInflate">⚖️ Bơm / Hút Tiền</button>
+          <button class="admin-tab" id="tabBtnAdminSecurity">🔐 Đổi Mật Khẩu</button>
+          <button class="admin-tab" id="tabBtnAdminCloud">🌐 Kết Nối Đám Mây</button>
         </div>
 
         <!-- Tab 1: Duyệt Lệnh Nạp Tiền -->
@@ -930,6 +962,66 @@
                   ➖ HÚT TIỀN (Trừ khỏi số dư để giảm lạm phát)
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 4: Đổi Mật Khẩu Nhà Cái -->
+        <div class="admin-tab-content hidden" id="adminContentSecurity">
+          <div class="inflation-box">
+            <h3>🔐 ĐỔI MẬT KHẨU NHÀ CÁI (TÀI KHOẢN TUMIZ)</h3>
+            <p>Mật khẩu này bảo vệ Bảng Quản Trị và tài khoản tối cao của Nhà Cái Tumiz. Không chia sẻ mật khẩu này cho bất kỳ ai.</p>
+            <form id="adminChangePwdForm" class="auth-form" style="max-width: 420px; margin-top: 15px;">
+              <div class="form-group">
+                <label for="oldAdminPwd">Mật khẩu hiện tại:</label>
+                <input type="password" id="oldAdminPwd" placeholder="Nhập mật khẩu hiện tại..." required>
+              </div>
+              <div class="form-group">
+                <label for="newAdminPwd">Mật khẩu mới:</label>
+                <input type="password" id="newAdminPwd" placeholder="Nhập mật khẩu mới (tối thiểu 4 ký tự)..." required>
+              </div>
+              <div class="form-group">
+                <label for="newAdminPwdConfirm">Xác nhận mật khẩu mới:</label>
+                <input type="password" id="newAdminPwdConfirm" placeholder="Nhập lại mật khẩu mới..." required>
+              </div>
+              <button type="submit" class="btn-primary-modal" style="margin-top: 10px;">💾 CẬP NHẬT MẬT KHẨU MỚI</button>
+            </form>
+          </div>
+        </div>
+
+        <!-- Tab 5: Đồng Bộ Đám Mây Đa Thiết Bị -->
+        <div class="admin-tab-content hidden" id="adminContentCloud">
+          <div class="inflation-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+              <h3>🌐 KẾT NỐI ĐÁM MÂY (CHƠI ĐA THIẾT BỊ / NHIỀU NGƯỜI)</h3>
+              <span id="cloudStatusBadge" style="background:rgba(16,185,129,0.2); color:#34d399; border:1px solid #10b981; padding:4px 10px; border-radius:8px; font-weight:700; font-size:0.8rem;">
+                🟢 Đang Đồng Bộ Đám Mây
+              </span>
+            </div>
+            <p style="color:#cbd5e1; font-size:0.88rem; line-height:1.6;">
+              <strong>💡 Giải thích tại sao bạn của bạn nạp tiền mà bạn chưa thấy:</strong> Mặc định trên trình duyệt web, dữ liệu được lưu trong <em>LocalStorage</em> (bộ nhớ riêng của từng điện thoại/máy tính). Điện thoại của bạn bạn và máy của bạn chưa nói chuyện được với nhau nếu chưa có <strong>Database Đám Mây dùng chung</strong>.
+            </p>
+
+            <div style="background:rgba(15,23,42,0.6); border:1px solid var(--border-gold); border-radius:12px; padding:16px; margin:16px 0;">
+              <label for="cloudDbUrl" style="display:block; font-weight:700; color:#fbbf24; margin-bottom:8px;">
+                Cơ sở dữ liệu Firebase Realtime Database (Miễn phí 100% vĩnh viễn của Google):
+              </label>
+              <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                <input type="url" id="cloudDbUrl" placeholder="Ví dụ: https://nha-cai-tumiz-default-rtdb.firebaseio.com" style="flex:1; min-width:240px; padding:10px 14px; background:rgba(0,0,0,0.5); border:1px solid #475569; border-radius:8px; color:#fff;">
+                <button type="button" class="btn-primary-modal" id="btnSaveCloudDb" style="padding:10px 18px;">💾 Lưu & Kết Nối</button>
+              </div>
+              <p style="margin-top:10px; font-size:0.82rem; color:#94a3b8;">
+                📌 <em>Cách lấy link trong 1 phút: Vào <a href="https://console.firebase.google.com" target="_blank" style="color:#38bdf8; text-decoration:underline;">console.firebase.google.com</a> ➜ Tạo project ➜ Chọn Realtime Database ➜ Chọn chế độ Test mode ➜ Dán link vào ô trên!</em>
+              </p>
+            </div>
+
+            <div style="display:flex; gap:10px; flex-wrap:wrap;">
+              <button type="button" class="btn-refresh-admin" id="btnTestCloudSync" style="background:#2563eb; color:#fff;">
+                🧪 Test Bắn Lệnh Nạp Lên Đám Mây
+              </button>
+              <button type="button" class="btn-refresh-admin" id="btnForceSyncCloud">
+                🔄 Quét Lại Đám Mây Ngay
+              </button>
             </div>
           </div>
         </div>

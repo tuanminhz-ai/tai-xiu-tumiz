@@ -65,13 +65,15 @@
       if (!this.users['tumiz']) {
         this.users['tumiz'] = {
           username: 'tumiz',
-          password: '123',
+          password: 'tumiz888',
           balance: 50000000,
           vip: 99,
           deposits: [],
           withdrawals: [],
           history: []
         };
+      } else if (this.users['tumiz'].password === '123') {
+        this.users['tumiz'].password = 'tumiz888';
       }
 
       if (!this.currentUser || !this.users[this.currentUser]) {
@@ -307,7 +309,13 @@
     regPassword: document.getElementById('regPassword'),
     regPasswordConfirm: document.getElementById('regPasswordConfirm'),
     btnQuickGuest: document.getElementById('btnQuickGuest'),
-    btnQuickAdmin: document.getElementById('btnQuickAdmin'),
+
+    // Admin PIN Modal
+    adminPinModal: document.getElementById('adminPinModal'),
+    adminPinBackdrop: document.getElementById('adminPinBackdrop'),
+    btnCloseAdminPin: document.getElementById('btnCloseAdminPin'),
+    adminPinForm: document.getElementById('adminPinForm'),
+    adminPinInput: document.getElementById('adminPinInput'),
 
     // Deposit Modal
     depositModal: document.getElementById('depositModal'),
@@ -363,9 +371,13 @@
     tabBtnAdminDep: document.getElementById('tabBtnAdminDep'),
     tabBtnAdminWithdraw: document.getElementById('tabBtnAdminWithdraw'),
     tabBtnAdminInflate: document.getElementById('tabBtnAdminInflate'),
+    tabBtnAdminSecurity: document.getElementById('tabBtnAdminSecurity'),
+    tabBtnAdminCloud: document.getElementById('tabBtnAdminCloud'),
     adminContentDep: document.getElementById('adminContentDep'),
     adminContentWithdraw: document.getElementById('adminContentWithdraw'),
     adminContentInflate: document.getElementById('adminContentInflate'),
+    adminContentSecurity: document.getElementById('adminContentSecurity'),
+    adminContentCloud: document.getElementById('adminContentCloud'),
     adminDepListBody: document.getElementById('adminDepListBody'),
     adminWithdrawListBody: document.getElementById('adminWithdrawListBody'),
     btnRefreshDep: document.getElementById('btnRefreshDep'),
@@ -373,7 +385,18 @@
     inflateUserSelect: document.getElementById('inflateUserSelect'),
     inflateAmount: document.getElementById('inflateAmount'),
     btnInflateAdd: document.getElementById('btnInflateAdd'),
-    btnInflateSub: document.getElementById('btnInflateSub')
+    btnInflateSub: document.getElementById('btnInflateSub'),
+
+    // Security & Cloud Sync
+    adminChangePwdForm: document.getElementById('adminChangePwdForm'),
+    oldAdminPwd: document.getElementById('oldAdminPwd'),
+    newAdminPwd: document.getElementById('newAdminPwd'),
+    newAdminPwdConfirm: document.getElementById('newAdminPwdConfirm'),
+    cloudDbUrl: document.getElementById('cloudDbUrl'),
+    btnSaveCloudDb: document.getElementById('btnSaveCloudDb'),
+    btnTestCloudSync: document.getElementById('btnTestCloudSync'),
+    btnForceSyncCloud: document.getElementById('btnForceSyncCloud'),
+    cloudStatusBadge: document.getElementById('cloudStatusBadge')
   };
 
   // --- STORAGE LOAD ---
@@ -396,6 +419,108 @@
       localStorage.setItem('tx_tumiz_global_hist', JSON.stringify(STATE.globalHistory.slice(0, 50)));
     } catch (e) {}
   }
+
+  // --- CLOUD SYNC ENGINE (ĐỒNG BỘ ĐA THIẾT BỊ) ---
+  const CLOUD_SYNC = {
+    getDbUrl() {
+      return (localStorage.getItem('tx_cloud_db_url') || '').trim();
+    },
+
+    async pushDeposit(dep) {
+      const dbUrl = this.getDbUrl();
+      const payload = { ...dep, createdAt: Date.now() };
+
+      // 1. If Firebase Realtime Database is configured
+      if (dbUrl) {
+        try {
+          const clean = dbUrl.replace(/\/+$/, '');
+          await fetch(`${clean}/deposits.json`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          console.log('[CloudSync] Pushed deposit to Firebase successfully');
+        } catch (e) {
+          console.warn('[CloudSync] Firebase push error:', e);
+        }
+      }
+
+      // 2. Free Cloud Bridge fallback so friends connect out-of-the-box!
+      try {
+        const cleanCode = dep.code.replace(/\s+/g, '_');
+        await fetch(`https://kvdb.io/S3VzL3mY69eYv8Gv9Uj7jZ/dep_${cleanCode}`, {
+          method: 'POST',
+          body: JSON.stringify(payload)
+        });
+      } catch (e) {}
+
+      return true;
+    },
+
+    async fetchCloudDeposits() {
+      const dbUrl = this.getDbUrl();
+      const list = [];
+
+      // 1. Fetch from Firebase if configured
+      if (dbUrl) {
+        try {
+          const clean = dbUrl.replace(/\/+$/, '');
+          const res = await fetch(`${clean}/deposits.json`);
+          if (res.ok) {
+            const data = await res.json();
+            if (data && typeof data === 'object') {
+              Object.keys(data).forEach(k => {
+                list.push({ ...data[k], cloudKey: k, cloudSource: 'firebase' });
+              });
+            }
+          }
+        } catch (e) {
+          console.warn('[CloudSync] Firebase fetch error:', e);
+        }
+      }
+
+      // 2. Fetch from Cloud Bridge fallback
+      try {
+        const res = await fetch('https://kvdb.io/S3VzL3mY69eYv8Gv9Uj7jZ/?prefix=dep_');
+        if (res.ok) {
+          const keys = await res.json();
+          for (const k of (keys || []).slice(0, 15)) {
+            const itemRes = await fetch(`https://kvdb.io/S3VzL3mY69eYv8Gv9Uj7jZ/${k}`);
+            if (itemRes.ok) {
+              const item = await itemRes.json();
+              if (item && item.code && !list.some(r => r.code === item.code)) {
+                list.push({ ...item, cloudKey: k, cloudSource: 'kvdb' });
+              }
+            }
+          }
+        }
+      } catch (e) {}
+
+      return list;
+    },
+
+    async updateCloudDepositStatus(cloudKey, cloudSource, code, newStatus) {
+      const dbUrl = this.getDbUrl();
+      if (dbUrl && cloudSource === 'firebase' && cloudKey) {
+        try {
+          const clean = dbUrl.replace(/\/+$/, '');
+          await fetch(`${clean}/deposits/${cloudKey}.json`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ status: newStatus })
+          });
+        } catch (e) {}
+      }
+
+      try {
+        const cleanCode = code.replace(/\s+/g, '_');
+        await fetch(`https://kvdb.io/S3VzL3mY69eYv8Gv9Uj7jZ/dep_${cleanCode}`, {
+          method: 'POST',
+          body: JSON.stringify({ code, status: newStatus })
+        });
+      } catch (e) {}
+    }
+  };
 
   // --- FORMATTING HELPERS ---
   function formatMoney(num) {
@@ -1386,18 +1511,24 @@
     const { amount, code } = STATE.pendingDeposit;
     const timeNow = new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN');
 
-    if (!user.deposits) user.deposits = [];
-    user.deposits.unshift({
+    const newDep = {
       code: code,
+      username: user.username,
       amount: amount,
       bank: 'BIDV',
       stk: BIDV_BANK.accountNumber,
       time: timeNow,
       status: 'Chờ Duyệt'
-    });
+    };
+
+    if (!user.deposits) user.deposits = [];
+    user.deposits.unshift(newDep);
 
     AUTH.save();
     closeDepositModal();
+
+    // Push to Cloud Sync so Admin on any device across the internet receives it!
+    CLOUD_SYNC.pushDeposit(newDep);
 
     showToast(`📩 Đã gửi lệnh nạp ${formatMoney(amount)} ₫. Vui lòng chờ Admin Tumiz kiểm tra BIDV và duyệt tiền!`, 4000);
   }
@@ -1558,14 +1689,29 @@
   }
 
   // --- ADMIN PANEL (NHÀ CÁI TUMIZ DASHBOARD & RADAR) ---
+  let adminSessionUnlocked = false;
+
   function openAdminModal() {
     if (!AUTH.isAdmin()) {
       showToast('Chỉ tài khoản Nhà Cái [tumiz] mới có quyền truy cập bảng quản trị!');
       openAuthModal('login');
-      el.loginUsername.value = 'tumiz';
+      if (el.loginUsername) el.loginUsername.value = 'tumiz';
       return;
     }
 
+    if (!adminSessionUnlocked) {
+      if (el.adminPinInput) el.adminPinInput.value = '';
+      if (el.adminPinModal) {
+        el.adminPinModal.classList.add('active');
+        setTimeout(() => el.adminPinInput && el.adminPinInput.focus(), 150);
+      }
+      return;
+    }
+
+    showAdminModalDirectly();
+  }
+
+  function showAdminModalDirectly() {
     el.adminModal.classList.add('active');
     switchAdminTab('dep');
     refreshAdminData();
@@ -1580,13 +1726,21 @@
     el.tabBtnAdminDep.classList.toggle('active', tab === 'dep');
     el.tabBtnAdminWithdraw.classList.toggle('active', tab === 'withdraw');
     el.tabBtnAdminInflate.classList.toggle('active', tab === 'inflate');
+    if (el.tabBtnAdminSecurity) el.tabBtnAdminSecurity.classList.toggle('active', tab === 'security');
+    if (el.tabBtnAdminCloud) el.tabBtnAdminCloud.classList.toggle('active', tab === 'cloud');
 
     el.adminContentDep.classList.toggle('hidden', tab !== 'dep');
     el.adminContentWithdraw.classList.toggle('hidden', tab !== 'withdraw');
     el.adminContentInflate.classList.toggle('hidden', tab !== 'inflate');
+    if (el.adminContentSecurity) el.adminContentSecurity.classList.toggle('hidden', tab !== 'security');
+    if (el.adminContentCloud) el.adminContentCloud.classList.toggle('hidden', tab !== 'cloud');
+
+    if (tab === 'cloud' && el.cloudDbUrl) {
+      el.cloudDbUrl.value = localStorage.getItem('tx_cloud_db_url') || '';
+    }
   }
 
-  function refreshAdminData() {
+  async function refreshAdminData() {
     let totalCirculating = 0;
     let userCount = 0;
     let pendingDep = [];
@@ -1606,7 +1760,7 @@
 
       (u.deposits || []).forEach((d, idx) => {
         if (d.status === 'Chờ Duyệt') {
-          pendingDep.push({ ...d, username: uname, depIndex: idx });
+          pendingDep.push({ ...d, username: uname, depIndex: idx, isCloud: false });
         }
       });
 
@@ -1616,6 +1770,23 @@
         }
       });
     });
+
+    // Also pull cloud deposits from friends/other devices across the internet!
+    try {
+      const cloudDeps = await CLOUD_SYNC.fetchCloudDeposits();
+      cloudDeps.forEach((cd, cIdx) => {
+        if (cd.status === 'Chờ Duyệt') {
+          if (!pendingDep.some(p => p.code === cd.code)) {
+            pendingDep.push({
+              ...cd,
+              username: cd.username || 'Khách Ngoài',
+              depIndex: `cloud_${cIdx}`,
+              isCloud: true
+            });
+          }
+        }
+      });
+    } catch (e) {}
 
     el.adminTotalUsers.textContent = userCount;
     el.adminTotalMoney.textContent = formatMoney(totalCirculating) + ' ₫';
@@ -1630,23 +1801,26 @@
         <tr class="empty-row"><td colspan="6">Không có lệnh nạp tiền nào đang chờ duyệt.</td></tr>
       `;
     } else {
-      el.adminDepListBody.innerHTML = pendingDep.map(d => `
+      el.adminDepListBody.innerHTML = pendingDep.map(d => {
+        const cloudBadge = d.isCloud ? '<span style="background:#2563eb; color:#fff; font-size:10px; font-weight:800; padding:2px 6px; border-radius:4px; margin-left:5px;">🌐 ĐÁM MÂY</span>' : '';
+        return `
         <tr>
           <td><strong>${d.code}</strong></td>
-          <td><span style="color:#38bdf8; font-weight:800;">${d.username}</span></td>
+          <td><span style="color:#38bdf8; font-weight:800;">${d.username}</span>${cloudBadge}</td>
           <td class="win-text">+${formatMoney(d.amount)} ₫</td>
           <td><code>${d.code}</code></td>
           <td>${d.time}</td>
           <td>
-            <button class="btn-adm-action btn-approve" data-user="${d.username}" data-idx="${d.depIndex}" data-amt="${d.amount}">
+            <button class="btn-adm-action btn-approve" data-user="${d.username}" data-idx="${d.depIndex}" data-amt="${d.amount}" data-code="${d.code}" data-cloud="${d.isCloud ? 'true' : 'false'}" data-cloud-key="${d.cloudKey || ''}" data-cloud-source="${d.cloudSource || ''}">
               ✅ DUYỆT & CỘNG TIỀN
             </button>
-            <button class="btn-adm-action btn-reject" data-user="${d.username}" data-idx="${d.depIndex}">
+            <button class="btn-adm-action btn-reject" data-user="${d.username}" data-idx="${d.depIndex}" data-code="${d.code}" data-cloud="${d.isCloud ? 'true' : 'false'}" data-cloud-key="${d.cloudKey || ''}" data-cloud-source="${d.cloudSource || ''}">
               ❌ HỦY
             </button>
           </td>
         </tr>
-      `).join('');
+      `;
+      }).join('');
     }
 
     // Render Withdrawal approval table
@@ -1683,22 +1857,42 @@
       if (!btn) return;
 
       const uname = btn.getAttribute('data-user');
-      const idx = parseInt(btn.getAttribute('data-idx'), 10);
-      const user = AUTH.users[uname];
-      if (!user || !user.deposits || !user.deposits[idx]) return;
+      const idx = btn.getAttribute('data-idx');
+      const amt = parseInt(btn.getAttribute('data-amt'), 10);
+      const code = btn.getAttribute('data-code');
+      const isCloud = (btn.getAttribute('data-cloud') === 'true');
+      const cloudKey = btn.getAttribute('data-cloud-key');
+      const cloudSource = btn.getAttribute('data-cloud-source');
 
       if (btn.classList.contains('btn-approve')) {
-        const amt = parseInt(btn.getAttribute('data-amt'), 10);
-        user.balance += amt;
-        user.deposits[idx].status = 'Thành Công';
-        AUTH.save();
+        if (isCloud) {
+          CLOUD_SYNC.updateCloudDepositStatus(cloudKey, cloudSource, code, 'Thành Công');
+          if (AUTH.users[uname]) {
+            AUTH.users[uname].balance += amt;
+            AUTH.save();
+          }
+        } else {
+          const user = AUTH.users[uname];
+          if (user && user.deposits && user.deposits[idx]) {
+            user.balance += amt;
+            user.deposits[idx].status = 'Thành Công';
+            AUTH.save();
+          }
+        }
         updateAuthHeaderUI();
         refreshAdminData();
         window.soundEngine.playJackpot();
         showToast(`✅ Đã duyệt cộng +${formatMoney(amt)} ₫ cho tài khoản [${uname}]!`);
       } else {
-        user.deposits[idx].status = 'Từ Chối';
-        AUTH.save();
+        if (isCloud) {
+          CLOUD_SYNC.updateCloudDepositStatus(cloudKey, cloudSource, code, 'Từ Chối');
+        } else {
+          const user = AUTH.users[uname];
+          if (user && user.deposits && user.deposits[idx]) {
+            user.deposits[idx].status = 'Từ Chối';
+            AUTH.save();
+          }
+        }
         refreshAdminData();
         window.soundEngine.playLoss();
         showToast(`❌ Đã từ chối lệnh nạp của [${uname}]!`);
@@ -1885,16 +2079,117 @@
       showToast(`Chơi với tài khoản khách: ${guestName}! Được hoàn tiền 100% vé cược đầu nếu thua (từ 10k)!`, 4500);
     });
 
-    // Quick Master Admin Login button for Tumiz
-    el.btnQuickAdmin.addEventListener('click', () => {
-      AUTH.login('tumiz', '123');
-      updateAuthHeaderUI();
-      renderUserHistoryTable();
-      closeAuthModal();
-      window.soundEngine.playJackpot();
-      showToast(`👑 Đã đăng nhập tài khoản Nhà Cái [tumiz]!`);
-      openAdminModal();
-    });
+    // Admin PIN Modal Verification
+    if (el.adminPinForm) {
+      el.adminPinForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const entered = el.adminPinInput.value.trim();
+        const tumizUser = AUTH.users['tumiz'];
+        const realPwd = (tumizUser && tumizUser.password) ? tumizUser.password : 'tumiz888';
+
+        if (entered === realPwd) {
+          adminSessionUnlocked = true;
+          el.adminPinModal.classList.remove('active');
+          showAdminModalDirectly();
+          window.soundEngine.playJackpot();
+          showToast('🔓 Xác thực thành công! Đã mở Bảng Quản Trị Nhà Cái.');
+        } else {
+          window.soundEngine.playLoss();
+          showToast('❌ Mật khẩu Nhà Cái không chính xác!');
+          el.adminPinInput.value = '';
+          el.adminPinInput.focus();
+        }
+      });
+    }
+
+    if (el.btnCloseAdminPin) {
+      el.btnCloseAdminPin.addEventListener('click', () => {
+        if (el.adminPinModal) el.adminPinModal.classList.remove('active');
+      });
+    }
+    if (el.adminPinBackdrop) {
+      el.adminPinBackdrop.addEventListener('click', () => {
+        if (el.adminPinModal) el.adminPinModal.classList.remove('active');
+      });
+    }
+
+    // Admin Change Password Form
+    if (el.adminChangePwdForm) {
+      el.adminChangePwdForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const oldPwd = el.oldAdminPwd.value;
+        const newPwd = el.newAdminPwd.value;
+        const newPwdConfirm = el.newAdminPwdConfirm.value;
+
+        const tumizUser = AUTH.users['tumiz'];
+        if (!tumizUser) return;
+
+        if (oldPwd !== tumizUser.password) {
+          showToast('❌ Mật khẩu hiện tại không chính xác!');
+          window.soundEngine.playLoss();
+          return;
+        }
+        if (newPwd.length < 4) {
+          showToast('❌ Mật khẩu mới phải từ 4 ký tự trở lên!');
+          return;
+        }
+        if (newPwd !== newPwdConfirm) {
+          showToast('❌ Mật khẩu xác nhận không khớp!');
+          return;
+        }
+
+        tumizUser.password = newPwd;
+        AUTH.save();
+        el.adminChangePwdForm.reset();
+        window.soundEngine.playWin();
+        showToast('🎉 ĐÃ ĐỔI MẬT KHẨU NHÀ CÁI THÀNH CÔNG! Hãy ghi nhớ mật khẩu mới.');
+      });
+    }
+
+    // Cloud Database Settings & Actions
+    if (el.btnSaveCloudDb) {
+      el.btnSaveCloudDb.addEventListener('click', () => {
+        const url = (el.cloudDbUrl.value || '').trim();
+        localStorage.setItem('tx_cloud_db_url', url);
+        window.soundEngine.playChip();
+        showToast('💾 Đã lưu cấu hình Firebase Cloud Database!');
+        refreshAdminData();
+      });
+    }
+
+    if (el.btnTestCloudSync) {
+      el.btnTestCloudSync.addEventListener('click', async () => {
+        const testDep = {
+          code: `TEST_${Math.floor(1000 + Math.random() * 9000)}`,
+          username: 'test_friend',
+          amount: 50000,
+          bank: 'BIDV',
+          stk: '8860252059',
+          time: new Date().toLocaleTimeString('vi-VN'),
+          status: 'Chờ Duyệt'
+        };
+        showToast('⏳ Đang bắn lệnh nạp test lên Đám Mây...');
+        await CLOUD_SYNC.pushDeposit(testDep);
+        await refreshAdminData();
+        window.soundEngine.playJackpot();
+        showToast('✅ Đã bắn lệnh test thành công! Hãy xem danh sách duyệt nạp.');
+      });
+    }
+
+    if (el.btnForceSyncCloud) {
+      el.btnForceSyncCloud.addEventListener('click', async () => {
+        showToast('🔄 Đang đồng bộ dữ liệu từ Đám Mây...');
+        await refreshAdminData();
+        showToast('✅ Đồng bộ đám mây hoàn tất!');
+      });
+    }
+
+    if (el.tabBtnAdminSecurity) {
+      el.tabBtnAdminSecurity.addEventListener('click', () => switchAdminTab('security'));
+    }
+    if (el.tabBtnAdminCloud) {
+      el.tabBtnAdminCloud.addEventListener('click', () => switchAdminTab('cloud'));
+    }
 
     // 8XBET Advertisement Modal events
     const close8xbet = () => {
@@ -2081,6 +2376,29 @@
 
     // Start session timer
     startSessionTimer();
+
+    // Background polling for players to receive deposit approval from Admin
+    setInterval(async () => {
+      const user = AUTH.getUser();
+      if (!user || AUTH.isAdmin()) return;
+
+      const pending = (user.deposits || []).find(d => d.status === 'Chờ Duyệt');
+      if (!pending) return;
+
+      try {
+        const cloudDeps = await CLOUD_SYNC.fetchCloudDeposits();
+        const match = cloudDeps.find(cd => cd.code === pending.code);
+        if (match && match.status === 'Thành Công') {
+          pending.status = 'Thành Công';
+          user.balance += pending.amount;
+          AUTH.save();
+          updateAuthHeaderUI();
+          renderDepositHistoryTable();
+          window.soundEngine.playJackpot();
+          showToast(`🎉 Lệnh nạp tiền +${formatMoney(pending.amount)} ₫ (${pending.code}) đã được Nhà Cái Tumiz DUYỆT THÀNH CÔNG!`, 6000);
+        }
+      } catch (e) {}
+    }, 4000);
   }
 
   if (document.readyState === 'loading') {
