@@ -50,7 +50,7 @@
           <button id="btnOpenWithdraw" class="btn-action btn-withdraw" title="Rút tiền về tài khoản ngân hàng">
             <span class="icon">💸</span> Rút Tiền
           </button>
-          <button id="btnOpenAdmin" class="btn-action btn-admin-badge" title="Bảng quản trị duyệt nạp/rút & kiểm soát lạm phát">
+          <button id="btnOpenAdmin" class="btn-action btn-admin-badge hidden" title="Bảng quản trị nhà cái (Chỉ Admin)">
             <span class="icon">👑</span> Quản Trị
           </button>
           <button id="btnSound" class="btn-action btn-icon" title="Bật/Tắt âm thanh">
@@ -70,7 +70,6 @@
       <div class="session-bar">
         <div class="session-id">
           Phiên: <strong id="sessionId">#882910</strong>
-          <span class="counter-badge" id="roundCounterBadge" title="Chu kỳ 50 ván có 1 ván Bão">Ván: 1/50</span>
         </div>
         
         <div class="timer-display" id="timerBox">
@@ -314,7 +313,7 @@
         <div class="road-header">
           <div class="road-title">
             <span>📊 BẢNG SOI CẦU TÀI XỈU</span>
-            <small>50 Phiên Gần Nhất (Cứ 50 Ván Có 1 Bão)</small>
+            <small>50 Phiên Gần Nhất</small>
           </div>
           <div class="road-stats">
             <span class="stat-tag stat-tai">Tài: <strong id="statTaiCount">0</strong> (<span id="statTaiPct">50%</span>)</span>
@@ -409,6 +408,7 @@
           <div class="form-actions">
             <button type="submit" class="btn-primary-modal">ĐĂNG NHẬP NGAY</button>
             <button type="button" class="btn-quick-guest" id="btnQuickGuest">⚡ Chơi Nhanh (Khách Demo)</button>
+            <button type="button" class="btn-quick-admin" id="btnQuickAdmin">👑 Đăng Nhập Nhà Cái (tumiz)</button>
           </div>
         </form>
 
@@ -734,6 +734,30 @@
           <div class="admin-stat-card">
             <span class="stat-lbl">Lệnh Rút Cần Chuyển</span>
             <strong id="adminPendingWithdrawCount" class="text-red">0</strong>
+          </div>
+        </div>
+
+        <!-- Secret House Radar: Soi trước kết quả tay tiếp theo & Bao lâu nữa đến Bão (CHỈ DÀNH CHO NHÀ CÁI) -->
+        <div class="admin-predictor-card">
+          <div class="pred-header">
+            <span class="pred-tag">🔮 SOI KẾT QUẢ TAY TIẾP THEO (CHỈ NHÀ CÁI THẤY)</span>
+            <span class="pred-cycle" id="adminTripleCountdown">⚡ Còn 50 ván nữa nổ BÃO (Ván 0/50)</span>
+          </div>
+          <div class="pred-body">
+            <div class="pred-dice-preview">
+              <span class="pred-label">KẾT QUẢ TAY TIẾP THEO SẮP RA:</span>
+              <div class="pred-dice-val" id="adminNextDiceVal">🎲 [5 - 5 - 1] = 11 điểm</div>
+              <div class="pred-result-badge tài" id="adminNextResultBadge">TÀI</div>
+            </div>
+            <div class="pred-controls">
+              <span class="pred-label">CAN THIỆP KẾT QUẢ THEO Ý BẠN:</span>
+              <div class="pred-btn-group">
+                <button type="button" class="btn-override btn-ovr-tai" id="btnOverrideTai">⚡ ÉP RA TÀI</button>
+                <button type="button" class="btn-override btn-ovr-xiu" id="btnOverrideXiu">⚡ ÉP RA XỈU</button>
+                <button type="button" class="btn-override btn-ovr-triple" id="btnOverrideTriple">⚡ CHO NỔ BÃO NGAY</button>
+                <button type="button" class="btn-override btn-ovr-auto active" id="btnOverrideAuto">🔄 ĐỂ TỰ NHIÊN</button>
+              </div>
+            </div>
           </div>
         </div>
 

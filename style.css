@@ -1385,6 +1385,148 @@ body {
 
 .hidden { display: none !important; }
 
+/* Quick Admin Button in Auth modal */
+.btn-quick-admin {
+  background: rgba(168, 85, 247, 0.15);
+  border: 1px solid rgba(168, 85, 247, 0.4);
+  color: #c084fc;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 0.85rem;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-quick-admin:hover {
+  background: rgba(168, 85, 247, 0.3);
+  color: #fff;
+}
+
+/* House Predictor Radar (Chỉ Dành Cho Nhà Cái Tumiz) */
+.admin-predictor-card {
+  margin: 16px 22px;
+  background: linear-gradient(135deg, rgba(88, 28, 135, 0.35) 0%, rgba(30, 27, 75, 0.6) 100%);
+  border: 2px solid #a855f7;
+  border-radius: 14px;
+  padding: 16px 20px;
+  box-shadow: 0 0 25px rgba(168, 85, 247, 0.25);
+}
+
+.pred-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid rgba(168, 85, 247, 0.25);
+  padding-bottom: 10px;
+}
+
+.pred-tag {
+  font-size: 0.85rem;
+  font-weight: 900;
+  color: #d8b4fe;
+  letter-spacing: 0.5px;
+}
+
+.pred-cycle {
+  font-size: 0.8rem;
+  font-weight: 800;
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.15);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  padding: 4px 12px;
+  border-radius: 20px;
+}
+
+.pred-body {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.pred-dice-preview {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pred-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+}
+
+.pred-dice-val {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #fff;
+}
+
+.pred-result-badge {
+  display: inline-block;
+  font-size: 0.85rem;
+  font-weight: 900;
+  padding: 3px 12px;
+  border-radius: 6px;
+  width: fit-content;
+}
+
+.pred-result-badge.tài {
+  background: var(--tai-gradient);
+  color: #fff;
+}
+
+.pred-result-badge.xỉu {
+  background: var(--xiu-gradient);
+  color: #fff;
+}
+
+.pred-result-badge.bão {
+  background: var(--gold-gradient);
+  color: #000;
+}
+
+.pred-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pred-btn-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.btn-override {
+  border: none;
+  font-family: inherit;
+  font-size: 0.75rem;
+  font-weight: 800;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-ovr-tai { background: #ef4444; color: #fff; }
+.btn-ovr-tai:hover, .btn-ovr-tai.active { filter: brightness(1.2); box-shadow: 0 0 10px #ef4444; }
+
+.btn-ovr-xiu { background: #3b82f6; color: #fff; }
+.btn-ovr-xiu:hover, .btn-ovr-xiu.active { filter: brightness(1.2); box-shadow: 0 0 10px #3b82f6; }
+
+.btn-ovr-triple { background: #f59e0b; color: #111; }
+.btn-ovr-triple:hover, .btn-ovr-triple.active { filter: brightness(1.2); box-shadow: 0 0 10px #f59e0b; }
+
+.btn-ovr-auto { background: rgba(255, 255, 255, 0.1); color: #e2e8f0; }
+.btn-ovr-auto:hover, .btn-ovr-auto.active { background: rgba(255, 255, 255, 0.2); }
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .betting-board { grid-template-columns: 1fr; }
@@ -1394,4 +1536,5 @@ body {
   .bill-grid { grid-template-columns: 1fr; }
   .quick-amounts { grid-template-columns: repeat(2, 1fr); }
   .admin-stats-bar { grid-template-columns: repeat(2, 1fr); }
+  .pred-body { flex-direction: column; align-items: flex-start; }
 }

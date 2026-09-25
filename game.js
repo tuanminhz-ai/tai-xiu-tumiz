@@ -1,16 +1,17 @@
 /* ==========================================================================
-   NHÀ CÁI TUMIZ - GAME ENGINE & AUTH & BIDV BANKING (8860252059)
+   NHÀ CÁI TUMIZ - GAME ENGINE & AUTH & SECRET HOUSE RADAR
    Slogan: Chơi thật hay, thắng liền tay
    Rules:
      - 3 xúc xắc 3D 6 mặt (1 - 6 mỗi con)
      - Tổng điểm >= 11: TÀI (1 ĂN 1.97)
      - Tổng điểm <= 10: XỈU (1 ĂN 1.97)
      - Bão: 3 xúc xắc có số điểm bằng nhau (1 ĂN 100)
-     - Cứ 50 lần chơi sẽ có 1 lần bão (1/50 cycle)
-     - Chữ sau khi mở bát ghi có dấu chuẩn: "Tài" và "Xỉu"
+     - Cứ 50 lần chơi sẽ có 1 lần bão (bí mật chỉ nhà cái biết)
+     - Chữ sau khi mở bát ghi có dấu: "Tài" và "Xỉu"
      - Lắc bát xong đếm ngược 10s: nếu không nặn bát sẽ tự mở, tự qua tay tiếp theo
      - Rút tiền: tạo request (STK + Ngân Hàng + Tên) gửi về Admin để tự chuyển tiền
      - Nạp tiền: chuyển khoản BIDV 8860252059, admin tự tay duyệt & cộng tiền để kiểm soát lạm phát
+     - BẢO MẬT NHÀ CÁI: Chỉ tài khoản 'tumiz' mới thấy nút Quản Trị, biết trước kết quả tay tiếp theo và bao lâu nữa nổ bão!
    ========================================================================== */
 
 (function () {
@@ -33,7 +34,7 @@
         console.warn('Cannot load auth', e);
       }
 
-      // Default demo account
+      // Default demo regular player account
       if (!this.users['demo'] && Object.keys(this.users).length === 0) {
         this.users['demo'] = {
           username: 'demo',
@@ -55,7 +56,7 @@
         };
       }
 
-      // Default admin account tumiz
+      // Master Admin House Account: tumiz
       if (!this.users['tumiz']) {
         this.users['tumiz'] = {
           username: 'tumiz',
@@ -87,6 +88,10 @@
         return null;
       }
       return this.users[this.currentUser];
+    },
+
+    isAdmin() {
+      return (this.currentUser === 'tumiz');
     },
 
     register(username, password) {
@@ -150,7 +155,7 @@
     currentChip: 1000,
     nanBatEnabled: true,
     sessionId: 882910,
-    roundCounter: 0, // Track 50-game cycle for Bão
+    roundCounter: 0, // Master counter for the 50-game Triple cycle
     timeLeft: 15,
     timerInterval: null,
     bowlAutoTimerInterval: null,
@@ -158,6 +163,8 @@
     isRolling: false,
     isRevealing: false,
     currentDice: [5, 5, 1],
+    nextDice: [5, 5, 1], // Pre-determined dice for upcoming round
+    adminOverride: null, // 'tai' | 'xiu' | 'triple' | null
     bets: {
       tai: 0,
       xiu: 0,
@@ -218,7 +225,6 @@
     btnMode: document.getElementById('btnMode'),
     modeText: document.getElementById('modeText'),
     sessionId: document.getElementById('sessionId'),
-    roundCounterBadge: document.getElementById('roundCounterBadge'),
     timerNumber: document.getElementById('timerNumber'),
     timerProgress: document.getElementById('timerProgress'),
     timerLabel: document.getElementById('timerLabel'),
@@ -289,6 +295,7 @@
     regPassword: document.getElementById('regPassword'),
     regPasswordConfirm: document.getElementById('regPasswordConfirm'),
     btnQuickGuest: document.getElementById('btnQuickGuest'),
+    btnQuickAdmin: document.getElementById('btnQuickAdmin'),
 
     // Deposit Modal
     depositModal: document.getElementById('depositModal'),
@@ -325,7 +332,7 @@
     btnWithdrawAll: document.getElementById('btnWithdrawAll'),
     withdrawHistoryBody: document.getElementById('withdrawHistoryBody'),
 
-    // Admin Dashboard Modal
+    // Admin Dashboard Modal & Secret House Radar
     adminModal: document.getElementById('adminModal'),
     btnCloseAdmin: document.getElementById('btnCloseAdmin'),
     adminTotalUsers: document.getElementById('adminTotalUsers'),
@@ -334,6 +341,13 @@
     adminPendingWithdrawCount: document.getElementById('adminPendingWithdrawCount'),
     badgePendingDep: document.getElementById('badgePendingDep'),
     badgePendingWithdraw: document.getElementById('badgePendingWithdraw'),
+    adminTripleCountdown: document.getElementById('adminTripleCountdown'),
+    adminNextDiceVal: document.getElementById('adminNextDiceVal'),
+    adminNextResultBadge: document.getElementById('adminNextResultBadge'),
+    btnOverrideTai: document.getElementById('btnOverrideTai'),
+    btnOverrideXiu: document.getElementById('btnOverrideXiu'),
+    btnOverrideTriple: document.getElementById('btnOverrideTriple'),
+    btnOverrideAuto: document.getElementById('btnOverrideAuto'),
     tabBtnAdminDep: document.getElementById('tabBtnAdminDep'),
     tabBtnAdminWithdraw: document.getElementById('tabBtnAdminWithdraw'),
     tabBtnAdminInflate: document.getElementById('tabBtnAdminInflate'),
@@ -384,19 +398,105 @@
     }, duration);
   }
 
-  // --- USER PROFILE & BALANCE UI ---
+  // --- SECRET HOUSE RADAR & PRE-DETERMINED OUTCOMES ---
+  // Calculates in advance what the next dice will be and how many rounds until Bão!
+  function calculateNextRoundDice() {
+    // Current index in 50-round cycle: 1 to 50
+    const nextGameNumber = STATE.roundCounter + 1;
+    const currentInCycle = ((nextGameNumber - 1) % 50) + 1;
+    const remainingUntilTriple = 50 - currentInCycle;
+
+    let d1, d2, d3;
+
+    // Check if forced Bão (by cycle 50 or admin override)
+    if (STATE.adminOverride === 'triple' || currentInCycle === 50) {
+      const tripVal = Math.floor(Math.random() * 6) + 1;
+      d1 = tripVal;
+      d2 = tripVal;
+      d3 = tripVal;
+    } else if (STATE.adminOverride === 'tai') {
+      // Force Tài (>= 11) without triple
+      do {
+        d1 = Math.floor(Math.random() * 6) + 1;
+        d2 = Math.floor(Math.random() * 6) + 1;
+        d3 = Math.floor(Math.random() * 6) + 1;
+      } while (d1 + d2 + d3 < 11 || (d1 === d2 && d2 === d3));
+    } else if (STATE.adminOverride === 'xiu') {
+      // Force Xỉu (<= 10) without triple
+      do {
+        d1 = Math.floor(Math.random() * 6) + 1;
+        d2 = Math.floor(Math.random() * 6) + 1;
+        d3 = Math.floor(Math.random() * 6) + 1;
+      } while (d1 + d2 + d3 > 10 || (d1 === d2 && d2 === d3));
+    } else {
+      // Natural random dice, strictly preventing accidental triple before the 50th round
+      d1 = Math.floor(Math.random() * 6) + 1;
+      d2 = Math.floor(Math.random() * 6) + 1;
+      d3 = Math.floor(Math.random() * 6) + 1;
+      if (d1 === d2 && d2 === d3) {
+        d3 = (d3 % 6) + 1;
+      }
+    }
+
+    STATE.nextDice = [d1, d2, d3];
+    updateHouseRadarUI(remainingUntilTriple, currentInCycle);
+  }
+
+  function updateHouseRadarUI(remainingUntilTriple, currentInCycle) {
+    if (!el.adminNextDiceVal) return;
+
+    const [d1, d2, d3] = STATE.nextDice;
+    const total = d1 + d2 + d3;
+    const isTriple = (d1 === d2 && d2 === d3);
+    const isTai = (total >= 11);
+
+    let winnerStr = isTai ? 'TÀI' : 'XỈU';
+    if (isTriple) winnerStr = `BÃO ${d1} (${winnerStr})`;
+
+    el.adminNextDiceVal.textContent = `🎲 [ ${d1} - ${d2} - ${d3} ] = ${total} điểm`;
+    el.adminNextResultBadge.textContent = winnerStr;
+    el.adminNextResultBadge.className = `pred-result-badge ${isTriple ? 'bão' : (isTai ? 'tài' : 'xỉu')}`;
+
+    if (remainingUntilTriple === 0 || STATE.adminOverride === 'triple') {
+      el.adminTripleCountdown.textContent = `⚡ TAY NÀY SẼ NỔ BÃO! (Ván 50/50)`;
+      el.adminTripleCountdown.style.background = 'rgba(239, 68, 68, 0.25)';
+      el.adminTripleCountdown.style.color = '#fca5a5';
+    } else {
+      el.adminTripleCountdown.textContent = `⚡ Còn ${remainingUntilTriple} ván nữa nổ BÃO (Ván ${currentInCycle}/50)`;
+      el.adminTripleCountdown.style.background = '';
+      el.adminTripleCountdown.style.color = '';
+    }
+
+    // Update active override buttons
+    if (el.btnOverrideTai) {
+      el.btnOverrideTai.classList.toggle('active', STATE.adminOverride === 'tai');
+      el.btnOverrideXiu.classList.toggle('active', STATE.adminOverride === 'xiu');
+      el.btnOverrideTriple.classList.toggle('active', STATE.adminOverride === 'triple');
+      el.btnOverrideAuto.classList.toggle('active', STATE.adminOverride === null);
+    }
+  }
+
+  // --- USER PROFILE & ROLE VISIBILITY ---
   function updateAuthHeaderUI() {
     const user = AUTH.getUser();
     if (user) {
       el.displayUsername.textContent = user.username;
-      el.displayVip.textContent = `VIP ${user.vip || 1}`;
+      el.displayVip.textContent = (user.username === 'tumiz') ? 'NHÀ CÁI' : `VIP ${user.vip || 1}`;
       el.userBalance.textContent = formatMoney(user.balance);
       el.btnLogout.style.display = 'block';
+
+      // Only the house account 'tumiz' can see the Admin Panel button!
+      if (AUTH.isAdmin()) {
+        el.btnOpenAdmin.classList.remove('hidden');
+      } else {
+        el.btnOpenAdmin.classList.add('hidden');
+      }
     } else {
       el.displayUsername.textContent = 'Chưa Đăng Nhập';
       el.displayVip.textContent = 'GUEST';
       el.userBalance.textContent = '0';
       el.btnLogout.style.display = 'none';
+      el.btnOpenAdmin.classList.add('hidden');
     }
   }
 
@@ -411,19 +511,6 @@
     el.totalBetXiu.textContent = formatMoney(STATE.simulatedBets.xiu + STATE.bets.xiu) + ' ₫';
     el.userCountTai.textContent = STATE.simulatedBets.taiUsers + (STATE.bets.tai > 0 ? 1 : 0);
     el.userCountXiu.textContent = STATE.simulatedBets.xiuUsers + (STATE.bets.xiu > 0 ? 1 : 0);
-  }
-
-  function updateRoundCounterUI() {
-    const currentInCycle = (STATE.roundCounter % 50) + 1;
-    el.roundCounterBadge.textContent = `Ván: ${currentInCycle}/50`;
-    if (currentInCycle === 50) {
-      el.roundCounterBadge.style.background = 'rgba(239, 68, 68, 0.3)';
-      el.roundCounterBadge.style.borderColor = '#ef4444';
-      el.roundCounterBadge.textContent = '🔥 VÁN 50: BÃO!';
-    } else {
-      el.roundCounterBadge.style.background = '';
-      el.roundCounterBadge.style.borderColor = '';
-    }
   }
 
   // --- 3D 6-FACE DICE ENGINE ---
@@ -555,13 +642,15 @@
     el.gameStatus.className = 'status-badge';
     el.resultBanner.classList.remove('show');
 
+    // Pre-determine next dice so the House knows in advance!
+    calculateNextRoundDice();
+
     // Simulate crowd betting
     STATE.simulatedBets.tai = Math.floor(12000000 + Math.random() * 18000000);
     STATE.simulatedBets.xiu = Math.floor(10000000 + Math.random() * 16000000);
     STATE.simulatedBets.taiUsers = Math.floor(120 + Math.random() * 150);
     STATE.simulatedBets.xiuUsers = Math.floor(100 + Math.random() * 130);
     updateBetDisplays();
-    updateRoundCounterUI();
 
     // Reset bowl overlay
     el.bowlOverlay.classList.remove('active');
@@ -608,34 +697,18 @@
     STATE.isRolling = true;
     STATE.roundCounter++;
     savePersistedData();
-    updateRoundCounterUI();
 
     el.timerLabel.textContent = 'LẮC BÁT';
     el.gameStatus.textContent = 'Đang lắc 3 xúc xắc 3D...';
     el.gameStatus.className = 'status-badge rolling';
     el.resultBanner.classList.remove('show');
 
-    // RULE: "Cứ 50 lần chơi sẽ có 1 lần bão"
-    let d1, d2, d3;
-    const is50thGame = (STATE.roundCounter % 50 === 0);
+    // Use the pre-determined dice that the House knew ahead of time!
+    STATE.currentDice = [...STATE.nextDice];
+    const [d1, d2, d3] = STATE.currentDice;
 
-    if (is50thGame) {
-      // Guaranteed Triple (Bão)
-      const tripleVal = Math.floor(Math.random() * 6) + 1;
-      d1 = tripleVal;
-      d2 = tripleVal;
-      d3 = tripleVal;
-    } else {
-      // Normal game (prevent accidental triple to strictly maintain 1 in 50 cycle)
-      d1 = Math.floor(Math.random() * 6) + 1;
-      d2 = Math.floor(Math.random() * 6) + 1;
-      d3 = Math.floor(Math.random() * 6) + 1;
-      if (d1 === d2 && d2 === d3) {
-        d3 = (d3 % 6) + 1; // Reroll to ensure exactly 1 triple per 50 games
-      }
-    }
-
-    STATE.currentDice = [d1, d2, d3];
+    // Reset override for next rounds
+    STATE.adminOverride = null;
 
     // Sound & 3D CSS tumbling
     window.soundEngine.playDiceShake();
@@ -716,8 +789,8 @@
     el.resultBanner.classList.add('show');
 
     // Calculate Payouts for Current User
-    // TÀI / XỈU: Tỷ lệ 1 : 1.97 (Lãi 0.97)
-    // BÃO: Tỷ lệ 1 : 100 (Lãi 100 lần)
+    // TÀI / XỈU: Tỷ lệ 1 : 1.97
+    // BÃO: Tỷ lệ 1 : 100
     const user = AUTH.getUser();
     let totalBet = 0;
     let netWin = 0;
@@ -1084,7 +1157,6 @@
     document.getElementById('btnCopyAmt').setAttribute('data-copy', amt);
     document.getElementById('btnCopyMemo').setAttribute('data-copy', transferCode);
 
-    // VietQR Generator
     const encodedMemo = encodeURIComponent(transferCode);
     const encodedName = encodeURIComponent(BIDV_BANK.accountName);
     const vietQrUrl = `https://img.vietqr.io/image/bidv-${BIDV_BANK.accountNumber}-compact2.png?amount=${amt}&addInfo=${encodedMemo}&accountName=${encodedName}`;
@@ -1096,7 +1168,6 @@
     window.soundEngine.playChip();
   }
 
-  // RULE: "về lệnh nạp tiền, thì sẽ chuyển khoản số tiền vào tk tao sau đó sẽ có thông báo để t có thể tự tay add tiền vào tài khoản của họ"
   function submitDepositRequestToAdmin() {
     const user = AUTH.getUser();
     if (!user) return;
@@ -1104,7 +1175,6 @@
     const { amount, code } = STATE.pendingDeposit;
     const timeNow = new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN');
 
-    // Add to user's deposit list as PENDING
     if (!user.deposits) user.deposits = [];
     user.deposits.unshift({
       code: code,
@@ -1153,7 +1223,7 @@
     }).join('');
   }
 
-  // --- WITHDRAWAL SYSTEM (YÊU CẦU MỚI) ---
+  // --- WITHDRAWAL SYSTEM ---
   function openWithdrawModal() {
     const user = AUTH.getUser();
     if (!user) {
@@ -1276,11 +1346,19 @@
     }).join('');
   }
 
-  // --- ADMIN PANEL (NHÀ CÁI TUMIZ DASHBOARD) ---
+  // --- ADMIN PANEL (NHÀ CÁI TUMIZ DASHBOARD & RADAR) ---
   function openAdminModal() {
+    if (!AUTH.isAdmin()) {
+      showToast('Chỉ tài khoản Nhà Cái [tumiz] mới có quyền truy cập bảng quản trị!');
+      openAuthModal('login');
+      el.loginUsername.value = 'tumiz';
+      return;
+    }
+
     el.adminModal.classList.add('active');
     switchAdminTab('dep');
     refreshAdminData();
+    calculateNextRoundDice();
   }
 
   function closeAdminModal() {
@@ -1303,7 +1381,6 @@
     let pendingDep = [];
     let pendingWithdraw = [];
 
-    // Populate user dropdown
     el.inflateUserSelect.innerHTML = '';
 
     Object.keys(AUTH.users).forEach(uname => {
@@ -1316,14 +1393,12 @@
       opt.textContent = `${uname} (Số dư: ${formatMoney(u.balance)} ₫)`;
       el.inflateUserSelect.appendChild(opt);
 
-      // Collect pending deposits
       (u.deposits || []).forEach((d, idx) => {
         if (d.status === 'Chờ Duyệt') {
           pendingDep.push({ ...d, username: uname, depIndex: idx });
         }
       });
 
-      // Collect pending withdrawals
       (u.withdrawals || []).forEach((w, idx) => {
         if (w.status === 'Chờ Admin Chuyển Tiền') {
           pendingWithdraw.push({ ...w, username: uname, withIndex: idx });
@@ -1390,7 +1465,6 @@
     }
   }
 
-  // Admin Actions Click Delegations
   function setupAdminDelegations() {
     // Deposit table buttons
     el.adminDepListBody.addEventListener('click', (e) => {
@@ -1438,7 +1512,6 @@
         window.soundEngine.playWin();
         showToast(`✅ Đã xác nhận chuyển tiền thành công cho [${uname}]!`);
       } else {
-        // Refund on-hold amount back to user
         const amt = parseInt(btn.getAttribute('data-amt'), 10);
         user.balance += amt;
         user.withdrawals[idx].status = 'Từ Chối';
@@ -1482,6 +1555,31 @@
         showToast(`➖ HÚT TIỀN: Đã trừ -${formatMoney(amt)} ₫ khỏi tài khoản [${uname}] để giảm lạm phát!`);
       }
     });
+
+    // Secret Outcome Override buttons (Chỉ Nhà Cái điều khiển)
+    el.btnOverrideTai.addEventListener('click', () => {
+      STATE.adminOverride = 'tai';
+      calculateNextRoundDice();
+      showToast('🔮 Đã ép kết quả tay tiếp theo ra TÀI!');
+    });
+
+    el.btnOverrideXiu.addEventListener('click', () => {
+      STATE.adminOverride = 'xiu';
+      calculateNextRoundDice();
+      showToast('🔮 Đã ép kết quả tay tiếp theo ra XỈU!');
+    });
+
+    el.btnOverrideTriple.addEventListener('click', () => {
+      STATE.adminOverride = 'triple';
+      calculateNextRoundDice();
+      showToast('⚡ Đã ép tay tiếp theo NỔ BÃO (1 ĂN 100)!');
+    });
+
+    el.btnOverrideAuto.addEventListener('click', () => {
+      STATE.adminOverride = null;
+      calculateNextRoundDice();
+      showToast('🔄 Đã chuyển về ngẫu nhiên tự nhiên (chu kỳ 50 ván 1 bão)!');
+    });
   }
 
   // --- CLIPBOARD HELPER ---
@@ -1506,7 +1604,6 @@
 
   // --- EVENT SETUP ---
   function setupEvents() {
-    // Auth open / close
     el.btnUserMenu.addEventListener('click', () => openAuthModal('login'));
     el.btnLogout.addEventListener('click', () => {
       AUTH.logout();
@@ -1530,7 +1627,11 @@
         renderUserHistoryTable();
         closeAuthModal();
         window.soundEngine.playWin();
-        showToast(`Chào mừng trở lại, ${res.user.username}!`);
+        if (AUTH.isAdmin()) {
+          showToast(`👑 Xin chào Nhà Cái Tumiz! Quyền quản trị đã kích hoạt.`);
+        } else {
+          showToast(`Chào mừng trở lại, ${res.user.username}!`);
+        }
       } else {
         showToast(res.message);
         window.soundEngine.playLoss();
@@ -1562,7 +1663,7 @@
       }
     });
 
-    // Guest login
+    // Quick Guest button
     el.btnQuickGuest.addEventListener('click', () => {
       const guestName = 'khach_' + Math.floor(1000 + Math.random() * 9000);
       AUTH.register(guestName, '123456');
@@ -1571,6 +1672,17 @@
       closeAuthModal();
       window.soundEngine.playWin();
       showToast(`Chơi với tài khoản: ${guestName} (+100K vốn)!`);
+    });
+
+    // Quick Master Admin Login button for Tumiz
+    el.btnQuickAdmin.addEventListener('click', () => {
+      AUTH.login('tumiz', '123');
+      updateAuthHeaderUI();
+      renderUserHistoryTable();
+      closeAuthModal();
+      window.soundEngine.playJackpot();
+      showToast(`👑 Đã đăng nhập tài khoản Nhà Cái [tumiz]!`);
+      openAdminModal();
     });
 
     // Deposit Modal events
@@ -1688,7 +1800,7 @@
     position3DDice(2, 5);
     position3DDice(3, 1);
 
-    // Start countdown timer loop
+    // Start session timer
     startSessionTimer();
   }
 
