@@ -468,7 +468,7 @@
   const CLOUD_SYNC = {
     getDbUrl() {
       const customUrl = (localStorage.getItem('tx_cloud_db_url') || '').trim();
-      if (customUrl) {
+      if (customUrl && !customUrl.includes('nha-cai-tumiz-888-default-rtdb')) {
         return customUrl.replace(/\/+$/, '');
       }
       if (typeof window !== 'undefined' && window.APP_CONFIG && window.APP_CONFIG.FIREBASE_URL) {

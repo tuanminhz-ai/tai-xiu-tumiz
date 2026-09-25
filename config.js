@@ -15,7 +15,7 @@
 window.APP_CONFIG = {
   // 🌐 LINK DATABASE DÙNG CHUNG CHO TẤT CẢ THIẾT BỊ
   // Khi bạn bè mở web trên điện thoại, web sẽ tự động kết nối vào link này!
-  FIREBASE_URL: "https://nha-cai-tumiz-888-default-rtdb.asia-southeast1.firebasedatabase.app",
+  FIREBASE_URL: "https://nha-cai-tumiz-default-rtdb.asia-southeast1.firebasedatabase.app",
 
   // 🏦 THÔNG TIN NGÂN HÀNG NHÀ CÁI TUMIZ (Nhận tiền nạp)
   BANK_NAME: "BIDV",
