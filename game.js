@@ -34,31 +34,12 @@
         console.warn('Cannot load auth', e);
       }
 
-      // Default demo regular player account
-      if (!this.users['demo'] && Object.keys(this.users).length === 0) {
-        this.users['demo'] = {
-          username: 'demo',
-          password: '123',
-          balance: 200000,
-          vip: 1,
-          firstBetRefundEligible: true,
-          hasUsedFirstBetRefund: false,
-          deposits: [
-            {
-              code: 'NAP TX8892',
-              amount: 200000,
-              bank: 'BIDV',
-              stk: '8860252059',
-              time: new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN'),
-              status: 'Thành Công'
-            }
-          ],
-          withdrawals: [],
-          history: []
-        };
-      } else if (this.users['demo'] && this.users['demo'].hasUsedFirstBetRefund === undefined) {
-        this.users['demo'].firstBetRefundEligible = true;
-        this.users['demo'].hasUsedFirstBetRefund = false;
+      // Purge demo account if present
+      if (this.users['demo']) {
+        delete this.users['demo'];
+      }
+      if (this.currentUser === 'demo') {
+        this.currentUser = null;
       }
 
       // Master Admin House Account: tumiz
@@ -67,7 +48,8 @@
           username: 'tumiz',
           password: 'tumiz888',
           balance: 50000000,
-          vip: 99,
+          vip: 10,
+          totalDeposited: 500000000,
           deposits: [],
           withdrawals: [],
           history: []
@@ -76,8 +58,8 @@
         this.users['tumiz'].password = 'tumiz888';
       }
 
-      if (!this.currentUser || !this.users[this.currentUser]) {
-        this.currentUser = 'demo';
+      if (this.currentUser && !this.users[this.currentUser]) {
+        this.currentUser = null;
       }
     },
 
@@ -123,13 +105,14 @@
         } catch (e) {}
       }
 
-      // RULE: "sửa lại đoạn đăng ký mới thay vì tặng 100 thì sẽ là hoàn tiền vé cược đầu khi đánh trên 10k, ví dụ đánh 20k thua thì vẫn sẽ được hoàn lại tiền sau đó thì mọi thứ như bình thường"
+      // RULE: "xoá chế độ tài khoản khách và nạp 50k demo đi, mỗi tài khoản vào chỉ được hoàn tiền một lần cuợc đầu tiên ( chỉ áp dụng với tài khoản đã đăng nhập)"
       this.users[username] = {
         username: username,
         password: password,
-        balance: 0, // Không tặng 100k vốn ban đầu
+        balance: 0,
         vip: 1,
-        firstBetRefundEligible: true, // Được bảo hiểm hoàn tiền 100% vé cược đầu tiên nếu cược >= 10.000 ₫
+        totalDeposited: 0,
+        firstBetRefundEligible: true, // Được bảo hiểm hoàn tiền 100% vé cược đầu tiên duy nhất 1 lần nếu thua (từ 10k)
         hasUsedFirstBetRefund: false,
         deposits: [],
         withdrawals: [],
@@ -189,6 +172,114 @@
       this.save();
     }
   };
+
+  // --- VIP TIERS SYSTEM (VIP 1 - VIP 10) ---
+  const VIP_TIERS = {
+    1: { level: 1, minDep: 0, title: 'Tân Thủ', icon: '🥉', bonus: 0, rebate: '0.2%', badge: 'VIP 1', perk: 'Bảo hiểm hoàn 100% vé cược đầu nếu thua (từ 10k)' },
+    2: { level: 2, minDep: 200000, title: 'Đồng', icon: '🥉', bonus: 20000, rebate: '0.5%', badge: 'VIP 2', perk: 'Thưởng thăng cấp +20k, Hoàn cược tuần 0.5%' },
+    3: { level: 3, minDep: 1000000, title: 'Bạc', icon: '🥈', bonus: 50000, rebate: '0.8%', badge: 'VIP 3', perk: 'Thưởng thăng cấp +50k, Duyệt nạp siêu tốc < 3 phút' },
+    4: { level: 4, minDep: 5000000, title: 'Vàng', icon: '🥇', bonus: 150000, rebate: '1.0%', badge: 'VIP 4', perk: 'Thưởng thăng cấp +150k, Quà sinh nhật +100k' },
+    5: { level: 5, minDep: 15000000, title: 'Bạch Kim', icon: '💎', bonus: 350000, rebate: '1.3%', badge: 'VIP 5', perk: 'Thưởng thăng cấp +350k, CSKH riêng 1:1' },
+    6: { level: 6, minDep: 35000000, title: 'Kim Cương', icon: '🔷', bonus: 800000, rebate: '1.6%', badge: 'VIP 6', perk: 'Thưởng thăng cấp +800k, Hạn mức rút 100M/ngày' },
+    7: { level: 7, minDep: 80000000, title: 'Tinh Anh', icon: '⚔️', bonus: 1888000, rebate: '2.0%', badge: 'VIP 7', perk: 'Thưởng thăng cấp +1.88M, Quà tri ân dịp lễ tết' },
+    8: { level: 8, minDep: 150000000, title: 'Huyền Thoại', icon: '👑', bonus: 3888000, rebate: '2.4%', badge: 'VIP 8', perk: 'Thưởng thăng cấp +3.88M, Kênh rút ẩn danh siêu tốc' },
+    9: { level: 9, minDep: 300000000, title: 'Thần Thoại', icon: '⚡', bonus: 8888000, rebate: '2.8%', badge: 'VIP 9', perk: 'Thưởng thăng cấp +8.88M, Quản gia tài chính riêng 24/7' },
+    10: { level: 10, minDep: 500000000, title: 'Chí Tôn Hoàng Gia', icon: '⚜️', bonus: 18888000, rebate: '3.2%', badge: 'VIP 10', perk: 'Thưởng thăng cấp +18.88M, Đặc quyền Hoàng Gia tối cao' }
+  };
+
+  function calculateVipLevel(totalDeposited) {
+    const amt = Number(totalDeposited) || 0;
+    for (let lvl = 10; lvl >= 1; lvl--) {
+      if (amt >= VIP_TIERS[lvl].minDep) return lvl;
+    }
+    return 1;
+  }
+
+  function checkVipLevelUp(user) {
+    if (!user || user.username === 'tumiz') return false;
+    const newVip = calculateVipLevel(user.totalDeposited || 0);
+    const oldVip = user.vip || 1;
+    if (newVip > oldVip) {
+      user.vip = newVip;
+      const tierInfo = VIP_TIERS[newVip];
+      if (tierInfo && tierInfo.bonus > 0) {
+        user.balance = (user.balance || 0) + tierInfo.bonus;
+      }
+      AUTH.save();
+      updateAuthHeaderUI();
+      if (CLOUD_SYNC.isConnected()) {
+        CLOUD_SYNC.updateUserVipAndBalance(user.username, newVip, user.balance, user.totalDeposited);
+      }
+      window.soundEngine.playJackpot();
+      showToast(`🎉 CHÚC MỪNG BẠN THĂNG HẠNG ${tierInfo.badge} (${tierInfo.title})! Nhận ngay +${formatMoney(tierInfo.bonus)} ₫ vào số dư!`, 6000);
+      return true;
+    }
+    return false;
+  }
+
+  function renderVipModal() {
+    if (!el.vipModal) return;
+    const user = AUTH.getUser();
+    const currentVip = user ? (user.vip || 1) : 1;
+    const totalDep = user ? (user.totalDeposited || 0) : 0;
+    const currentTier = VIP_TIERS[currentVip] || VIP_TIERS[1];
+    const nextLevel = Math.min(10, currentVip + 1);
+    const nextTier = VIP_TIERS[nextLevel];
+
+    if (el.vipModalCurrentBadge) el.vipModalCurrentBadge.textContent = currentTier.badge;
+    if (el.vipModalCurrentTitle) el.vipModalCurrentTitle.textContent = `${currentTier.icon} ${currentTier.title}`;
+    if (el.vipModalTotalDep) el.vipModalTotalDep.textContent = formatMoney(totalDep) + ' ₫';
+
+    let progressPct = 100;
+    if (currentVip < 10) {
+      const prevMin = currentTier.minDep;
+      const nextMin = nextTier.minDep;
+      progressPct = Math.min(100, Math.max(0, Math.round(((totalDep - prevMin) / (nextMin - prevMin)) * 100)));
+      if (el.vipProgressRatio) {
+        el.vipProgressRatio.textContent = `${formatMoney(totalDep)} / ${formatMoney(nextMin)} ₫ (${progressPct}%)`;
+      }
+    } else {
+      if (el.vipProgressRatio) el.vipProgressRatio.textContent = 'ĐÃ ĐẠT CẤP TỐI ĐA (CHÍ TÔN 100%)';
+    }
+    if (el.vipProgressBarFill) el.vipProgressBarFill.style.width = `${progressPct}%`;
+
+    if (el.vipTiersTableBody) {
+      el.vipTiersTableBody.innerHTML = Object.values(VIP_TIERS).map(t => {
+        const isCurrent = (t.level === currentVip);
+        const isUnlocked = (currentVip >= t.level);
+        return `
+          <tr class="${isCurrent ? 'active-tier' : ''}">
+            <td>
+              <span class="vip-tag-cell">
+                <span class="vip-tag-pill">${t.badge}</span>
+                <span>${t.icon} ${t.title}</span>
+              </span>
+            </td>
+            <td><strong>${t.minDep === 0 ? '0 ₫' : formatMoney(t.minDep) + ' ₫'}</strong></td>
+            <td class="win-text">${t.bonus === 0 ? '—' : '+' + formatMoney(t.bonus) + ' ₫'}</td>
+            <td><strong style="color:#38bdf8;">${t.rebate}</strong></td>
+            <td><small>${t.perk}</small></td>
+            <td>
+              ${isCurrent 
+                ? '<span style="background:#f59e0b; color:#0f172a; font-weight:800; padding:2px 8px; border-radius:6px; font-size:10px;">HIỆN TẠI</span>' 
+                : (isUnlocked 
+                    ? '<span class="vip-status-unlocked">✅ ĐÃ ĐẠT</span>' 
+                    : '<span class="vip-status-locked">🔒 CHƯA ĐẠT</span>')}
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+  }
+
+  function openVipModal() {
+    renderVipModal();
+    if (el.vipModal) el.vipModal.classList.add('active');
+  }
+
+  function closeVipModal() {
+    if (el.vipModal) el.vipModal.classList.remove('active');
+  }
 
   // --- GAME STATE ---
   const STATE = {
@@ -464,7 +555,42 @@
     pnlCardTai: document.getElementById('pnlCardTai'),
     pnlCardXiu: document.getElementById('pnlCardXiu'),
     pnlCardBao: document.getElementById('pnlCardBao'),
-    adminSmartAdvice: document.getElementById('adminSmartAdvice')
+    adminSmartAdvice: document.getElementById('adminSmartAdvice'),
+
+    // VIP Modal & Header Login
+    btnHeaderLogin: document.getElementById('btnHeaderLogin'),
+    vipModal: document.getElementById('vipModal'),
+    btnCloseVipModal: document.getElementById('btnCloseVipModal'),
+    vipModalCurrentBadge: document.getElementById('vipModalCurrentBadge'),
+    vipModalCurrentTitle: document.getElementById('vipModalCurrentTitle'),
+    vipProgressRatio: document.getElementById('vipProgressRatio'),
+    vipProgressBarFill: document.getElementById('vipProgressBarFill'),
+    vipModalTotalDep: document.getElementById('vipModalTotalDep'),
+    vipTiersTableBody: document.getElementById('vipTiersTableBody'),
+
+    // CSKH Client Widget & Chat Popup
+    cskhWidgetContainer: document.getElementById('cskhWidgetContainer'),
+    cskhFloatingBtn: document.getElementById('cskhFloatingBtn'),
+    cskhUserUnreadBadge: document.getElementById('cskhUserUnreadBadge'),
+    cskhChatBox: document.getElementById('cskhChatBox'),
+    btnCloseCskhChat: document.getElementById('btnCloseCskhChat'),
+    cskhChatMessages: document.getElementById('cskhChatMessages'),
+    cskhChatForm: document.getElementById('cskhChatForm'),
+    cskhChatInput: document.getElementById('cskhChatInput'),
+    btnCskhSend: document.getElementById('btnCskhSend'),
+    cskhChips: document.querySelectorAll('.cskh-chip'),
+
+    // Admin CSKH Manager
+    tabBtnAdminCskh: document.getElementById('tabBtnAdminCskh'),
+    badgeCskhUnread: document.getElementById('badgeCskhUnread'),
+    adminContentCskh: document.getElementById('adminContentCskh'),
+    btnRefreshCskh: document.getElementById('btnRefreshCskh'),
+    adminCskhThreadsList: document.getElementById('adminCskhThreadsList'),
+    adminCskhActiveUser: document.getElementById('adminCskhActiveUser'),
+    adminCskhMessages: document.getElementById('adminCskhMessages'),
+    adminCskhReplyForm: document.getElementById('adminCskhReplyForm'),
+    adminCskhReplyInput: document.getElementById('adminCskhReplyInput'),
+    btnAdminSendReply: document.getElementById('btnAdminSendReply')
   };
 
   function seedInitialGlobalHistory() {
@@ -943,6 +1069,117 @@
           method: 'DELETE'
         });
       } catch (e) {}
+    },
+
+    async updateUserVipAndBalance(username, vip, balance, totalDeposited) {
+      const dbUrl = this.getDbUrl();
+      if (!dbUrl || !username) return false;
+      try {
+        const cleanUname = encodeURIComponent(username.trim().toLowerCase());
+        await fetch(`${dbUrl}/users/${cleanUname}.json`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            vip: Number(vip) || 1,
+            balance: Number(balance) || 0,
+            totalDeposited: Number(totalDeposited) || 0,
+            updatedAt: Date.now()
+          })
+        });
+        return true;
+      } catch (e) {
+        return false;
+      }
+    },
+
+    async updateUserRefundStatus(username, eligible, hasUsed) {
+      const dbUrl = this.getDbUrl();
+      if (!dbUrl || !username) return false;
+      try {
+        const cleanUname = encodeURIComponent(username.trim().toLowerCase());
+        await fetch(`${dbUrl}/users/${cleanUname}.json`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            firstBetRefundEligible: !!eligible,
+            hasUsedFirstBetRefund: !!hasUsed,
+            updatedAt: Date.now()
+          })
+        });
+        return true;
+      } catch (e) {
+        return false;
+      }
+    },
+
+    // --- REALTIME CSKH SUPPORT CHAT ---
+    async sendSupportMessage(username, messageObj) {
+      const dbUrl = this.getDbUrl();
+      if (!dbUrl || !username || !messageObj) return;
+      try {
+        const cleanUname = encodeURIComponent(username.trim().toLowerCase());
+        const msgKey = messageObj.id || ('msg_' + Date.now());
+        // 1. Push message
+        await fetch(`${dbUrl}/support_threads/${cleanUname}/messages/${msgKey}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(messageObj)
+        });
+        // 2. Update thread meta
+        const user = AUTH.users[username] || {};
+        await fetch(`${dbUrl}/support_threads/${cleanUname}.json`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: username,
+            vip: user.vip || 1,
+            lastMessage: messageObj.text,
+            lastSender: messageObj.sender,
+            lastTime: messageObj.time,
+            updatedAt: Date.now(),
+            unreadByAdmin: (messageObj.sender === 'user'),
+            unreadByUser: (messageObj.sender === 'admin')
+          })
+        });
+      } catch (e) {}
+    },
+
+    async fetchSupportThreads() {
+      const dbUrl = this.getDbUrl();
+      if (!dbUrl) return {};
+      try {
+        const res = await fetch(`${dbUrl}/support_threads.json`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && typeof data === 'object') return data;
+        }
+      } catch (e) {}
+      return {};
+    },
+
+    async fetchSupportThread(username) {
+      const dbUrl = this.getDbUrl();
+      if (!dbUrl || !username) return null;
+      try {
+        const cleanUname = encodeURIComponent(username.trim().toLowerCase());
+        const res = await fetch(`${dbUrl}/support_threads/${cleanUname}.json`);
+        if (res.ok) return await res.json();
+      } catch (e) {}
+      return null;
+    },
+
+    async markThreadRead(username, role) {
+      const dbUrl = this.getDbUrl();
+      if (!dbUrl || !username) return;
+      try {
+        const cleanUname = encodeURIComponent(username.trim().toLowerCase());
+        const patchData = (role === 'admin') ? { unreadByAdmin: false } : { unreadByUser: false };
+        await fetch(`${dbUrl}/support_threads/${cleanUname}.json`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patchData)
+        });
+      } catch (e) {}
     }
   };
 
@@ -1042,9 +1279,13 @@
     const user = AUTH.getUser();
     if (user) {
       el.displayUsername.textContent = user.username;
-      el.displayVip.textContent = (user.username === 'tumiz') ? 'NHÀ CÁI' : `VIP ${user.vip || 1}`;
+      const vipNum = user.vip || 1;
+      const tierInfo = VIP_TIERS[vipNum] || VIP_TIERS[1];
+      el.displayVip.textContent = (user.username === 'tumiz') ? '👑 NHÀ CÁI' : `${tierInfo.icon} VIP ${vipNum}`;
+      el.displayVip.style.display = 'inline-block';
       el.userBalance.textContent = formatMoney(user.balance);
       el.btnLogout.style.display = 'block';
+      if (el.btnHeaderLogin) el.btnHeaderLogin.style.display = 'none';
 
       // Only the house account 'tumiz' can see the Admin Panel button!
       if (AUTH.isAdmin()) {
@@ -1054,9 +1295,10 @@
       }
     } else {
       el.displayUsername.textContent = 'Chưa Đăng Nhập';
-      el.displayVip.textContent = 'GUEST';
+      el.displayVip.style.display = 'none';
       el.userBalance.textContent = '0';
       el.btnLogout.style.display = 'none';
+      if (el.btnHeaderLogin) el.btnHeaderLogin.style.display = 'inline-block';
       el.btnOpenAdmin.classList.add('hidden');
     }
   }
@@ -1529,8 +1771,8 @@
 
 
         // Check First Bet 100% Refund Promotion:
-        // RULE: "hoàn tiền vé cược đầu khi đánh trên 10k, ví dụ đánh 20k thua thì vẫn sẽ được hoàn lại tiền sau đó thì mọi thứ như bình thường"
-        if (user.firstBetRefundEligible && totalBet >= 10000) {
+        // RULE: "mỗi tài khoản vào chỉ được hoàn tiền một lần cuợc đầu tiên ( chỉ áp dụng với tài khoản đã đăng nhập)"
+        if (user && user.firstBetRefundEligible && !user.hasUsedFirstBetRefund && totalBet >= 10000) {
           if (netWin < 0) {
             // Player lost their qualifying first bet >= 10.000 ₫ -> 100% REFUND!
             refundedAmount = Math.abs(netWin);
@@ -1550,9 +1792,12 @@
             });
           }
 
-          // Promo is consumed after first qualifying bet >= 10k
+          // Promo is permanently consumed after first qualifying bet >= 10k
           user.firstBetRefundEligible = false;
           user.hasUsedFirstBetRefund = true;
+          if (CLOUD_SYNC.isConnected()) {
+            CLOUD_SYNC.updateUserRefundStatus(user.username, false, true);
+          }
         }
 
         // Record to user's history
@@ -2294,6 +2539,7 @@
     el.tabBtnAdminInflate.classList.toggle('active', tab === 'inflate');
     if (el.tabBtnAdminSecurity) el.tabBtnAdminSecurity.classList.toggle('active', tab === 'security');
     if (el.tabBtnAdminCloud) el.tabBtnAdminCloud.classList.toggle('active', tab === 'cloud');
+    if (el.tabBtnAdminCskh) el.tabBtnAdminCskh.classList.toggle('active', tab === 'cskh');
 
     el.adminContentDep.classList.toggle('hidden', tab !== 'dep');
     el.adminContentWithdraw.classList.toggle('hidden', tab !== 'withdraw');
@@ -2301,7 +2547,11 @@
     el.adminContentInflate.classList.toggle('hidden', tab !== 'inflate');
     if (el.adminContentSecurity) el.adminContentSecurity.classList.toggle('hidden', tab !== 'security');
     if (el.adminContentCloud) el.adminContentCloud.classList.toggle('hidden', tab !== 'cloud');
+    if (el.adminContentCskh) el.adminContentCskh.classList.toggle('hidden', tab !== 'cskh');
 
+    if (tab === 'cskh') {
+      refreshAdminCskhData();
+    }
     if (tab === 'cloud' && el.cloudDbUrl) {
       el.cloudDbUrl.value = localStorage.getItem('tx_cloud_db_url') || (window.APP_CONFIG && window.APP_CONFIG.FIREBASE_URL) || '';
     }
@@ -2644,6 +2894,348 @@
     }
   }
 
+  // --- CSKH SUPPORT SYSTEM (AI ASSISTANT & REALTIME ADMIN LIVE CHAT) ---
+  const CSKH = {
+    isOpen: false,
+    activeAdminUser: null,
+    cachedThreads: {},
+    localMessages: [],
+    syncInterval: null,
+
+    init() {
+      const user = AUTH.getUser();
+      const uname = user ? user.username : 'khach_anonym';
+      try {
+        const saved = localStorage.getItem(`tx_cskh_msgs_${uname}`);
+        if (saved) this.localMessages = JSON.parse(saved);
+        else this.localMessages = [];
+      } catch (e) {
+        this.localMessages = [];
+      }
+
+      if (this.localMessages.length === 0) {
+        this.localMessages.push({
+          id: 'welcome_' + Date.now(),
+          sender: 'bot',
+          text: '👋 Chào mừng bạn đến với Cổng Hỗ Trợ 24/7 của Nhà Cái Tumiz!\nTrợ lý AI và Đội ngũ Admin luôn sẵn sàng phục vụ bạn.\nBạn cần hỗ trợ về vấn đề gì hôm nay?',
+          time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+          timestamp: Date.now()
+        });
+      }
+    },
+
+    saveLocal() {
+      const user = AUTH.getUser();
+      const uname = user ? user.username : 'khach_anonym';
+      try {
+        localStorage.setItem(`tx_cskh_msgs_${uname}`, JSON.stringify(this.localMessages));
+      } catch (e) {}
+    },
+
+    toggleChat() {
+      if (this.isOpen) this.closeChat();
+      else this.openChat();
+    },
+
+    openChat() {
+      this.isOpen = true;
+      if (el.cskhChatBox) el.cskhChatBox.classList.remove('hidden');
+      if (el.cskhUserUnreadBadge) el.cskhUserUnreadBadge.classList.add('hidden');
+      this.renderMessages();
+      this.syncFromCloud();
+      setTimeout(() => el.cskhChatInput && el.cskhChatInput.focus(), 150);
+    },
+
+    closeChat() {
+      this.isOpen = false;
+      if (el.cskhChatBox) el.cskhChatBox.classList.add('hidden');
+    },
+
+    renderMessages() {
+      if (!el.cskhChatMessages) return;
+      el.cskhChatMessages.innerHTML = this.localMessages.map(m => {
+        let senderName = 'Bạn';
+        let cls = 'user';
+        if (m.sender === 'bot') {
+          senderName = '🤖 Trợ Lý AI Tumiz';
+          cls = 'bot';
+        } else if (m.sender === 'admin') {
+          senderName = '👑 Admin Nhà Cái Tumiz';
+          cls = 'admin';
+        }
+        return `
+          <div class="cskh-msg ${cls}">
+            <span class="cskh-msg-sender">${senderName}</span>
+            <div class="cskh-bubble">${m.text.replace(/\n/g, '<br>')}</div>
+            <span class="cskh-msg-time">${m.time || ''}</span>
+          </div>
+        `;
+      }).join('');
+      el.cskhChatMessages.scrollTop = el.cskhChatMessages.scrollHeight;
+    },
+
+    async sendUserMessage(text) {
+      text = text.trim();
+      if (!text) return;
+      const user = AUTH.getUser();
+      if (!user) {
+        showToast('Vui lòng đăng nhập để gửi tin nhắn hỗ trợ!');
+        openAuthModal('login');
+        return;
+      }
+
+      const now = new Date();
+      const timeStr = now.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+      const userMsg = {
+        id: 'msg_' + Date.now(),
+        sender: 'user',
+        text: text,
+        time: timeStr,
+        timestamp: Date.now()
+      };
+
+      this.localMessages.push(userMsg);
+      this.saveLocal();
+      this.renderMessages();
+      window.soundEngine.playTick();
+
+      if (CLOUD_SYNC.isConnected()) {
+        CLOUD_SYNC.sendSupportMessage(user.username, userMsg);
+      }
+
+      this.generateBotResponses(text, user);
+    },
+
+    generateBotResponses(query, user) {
+      const lower = query.toLowerCase();
+
+      // Response 1: Acknowledgment greeting (~600ms)
+      setTimeout(() => {
+        const resp1 = {
+          id: 'bot_ack_' + Date.now(),
+          sender: 'bot',
+          text: `Dạ Nhà Cái Tumiz xin chào bạn @${user.username}! Hệ thống đã nhận được câu hỏi: "${query}". Đang kiểm tra dữ liệu cho bạn...`,
+          time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+          timestamp: Date.now()
+        };
+        this.localMessages.push(resp1);
+        this.saveLocal();
+        this.renderMessages();
+        window.soundEngine.playTick();
+        if (CLOUD_SYNC.isConnected()) CLOUD_SYNC.sendSupportMessage(user.username, resp1);
+      }, 650);
+
+      // Response 2: Smart Contextual AI Answer (~1500ms)
+      setTimeout(() => {
+        let answer = '';
+        if (lower.includes('nạp') || lower.includes('chuyển khoản') || lower.includes('stk') || lower.includes('bidv')) {
+          answer = `💳 **HƯỚNG DẪN NẠP TIỀN**:\n- Bạn bấm nút [Nạp Tiền] màu vàng trên góc màn hình.\n- Quét mã VietQR hoặc chuyển tới STK BIDV: 8860252059 (Admin Tumiz).\n- **Bắt buộc**: Điền đúng MÃ LỆNH vào nội dung chuyển khoản để tiền được duyệt tự động sau 1-3 phút!`;
+        } else if (lower.includes('rút') || lower.includes('min') || lower.includes('bao nhiêu')) {
+          answer = `💸 **QUY ĐỊNH RÚT TIỀN**:\n- Số tiền rút tối thiểu là **200.000 ₫**.\n- Bạn bấm nút [Rút Tiền], điền STK + Tên người thụ hưởng.\n- Admin Tumiz sẽ duyệt và chuyển khoản trực tiếp vào tài khoản ngân hàng của bạn trong vòng 3-5 phút (hoàn toàn miễn phí)!`;
+        } else if (lower.includes('hoàn') || lower.includes('bảo hiểm') || lower.includes('tân thủ') || lower.includes('thua')) {
+          answer = `🛡️ **BẢO HIỂM TÂN THỦ 100%**:\n- Áp dụng duy nhất 1 lần cho tài khoản đã đăng ký.\n- Khi bạn cược tay đầu tiên từ 10.000 ₫ trở lên, nếu không may thua sẽ được hoàn trả lại 100% tiền cược vào ví ngay khi mở bát!`;
+        } else if (lower.includes('vip') || lower.includes('cấp') || lower.includes('thăng hạng') || lower.includes('thưởng')) {
+          const currentVip = user.vip || 1;
+          const tier = VIP_TIERS[currentVip] || VIP_TIERS[1];
+          answer = `👑 **CHẾ ĐỘ CẤP BẬC VIP 1 - 10**:\n- Hiện tại bạn đang là: **${tier.badge} (${tier.title})**.\n- Cấp VIP thăng hạng tự động theo tổng tiền nạp tích lũy.\n- Mỗi cấp VIP được nhận thưởng lên tới 18.888.000 ₫ và hưởng hoàn cược thua tuần từ 0.2% đến 3.2%!\n👉 Bấm vào huy hiệu VIP trên góc màn hình để xem bảng chi tiết.`;
+        } else if (lower.includes('luật') || lower.includes('tài') || lower.includes('xỉu') || lower.includes('bão')) {
+          answer = `🎲 **LUẬT CHƠI TÀI XỈU TUMIZ**:\n- Tổng 3 xúc xắc 11 - 17: **TÀI** (1 ăn 1.97).\n- Tổng 3 xúc xắc 4 - 10: **XỈU** (1 ăn 1.97).\n- 3 mặt giống nhau (BÃO): **1 ĂN 100**!\n- Mỗi phiên bạn chỉ được chọn cược 1 trong 3 cửa.`;
+        } else {
+          answer = `💡 **HỖ TRỢ NHANH**:\nBạn có thể hỏi thêm về: *Nạp tiền, Rút tiền (tối thiểu 200k), Bảo hiểm hoàn cược tân thủ, hoặc Hệ thống VIP 1-10* để nhận hướng dẫn chi tiết nhé!`;
+        }
+
+        const resp2 = {
+          id: 'bot_ans_' + Date.now(),
+          sender: 'bot',
+          text: answer,
+          time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+          timestamp: Date.now()
+        };
+        this.localMessages.push(resp2);
+        this.saveLocal();
+        this.renderMessages();
+        window.soundEngine.playTick();
+        if (CLOUD_SYNC.isConnected()) CLOUD_SYNC.sendSupportMessage(user.username, resp2);
+      }, 1550);
+
+      // Response 3: Admin Escalation & Care Note (~2400ms)
+      setTimeout(() => {
+        const resp3 = {
+          id: 'bot_esc_' + Date.now(),
+          sender: 'bot',
+          text: `👨‍💻 **Admin Nhà Cái Tumiz** đang trực hệ thống. Nếu bạn có yêu cầu can thiệp hoặc hỗ trợ tài khoản đặc biệt, Admin sẽ nhắn lại trực tiếp tại khung chat này nhé! Chúc bạn chơi vui vẻ và thắng lớn! 🍀`,
+          time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+          timestamp: Date.now()
+        };
+        this.localMessages.push(resp3);
+        this.saveLocal();
+        this.renderMessages();
+        window.soundEngine.playTick();
+        if (CLOUD_SYNC.isConnected()) CLOUD_SYNC.sendSupportMessage(user.username, resp3);
+      }, 2450);
+    },
+
+    async syncFromCloud() {
+      const user = AUTH.getUser();
+      if (!user || !CLOUD_SYNC.isConnected()) return;
+      try {
+        const thread = await CLOUD_SYNC.fetchSupportThread(user.username);
+        if (thread && thread.messages && typeof thread.messages === 'object') {
+          const cloudList = Object.values(thread.messages).sort((a, b) => a.timestamp - b.timestamp);
+          if (cloudList.length > this.localMessages.length) {
+            const hasNewAdmin = cloudList.some(cm => cm.sender === 'admin' && !this.localMessages.some(lm => lm.id === cm.id));
+            this.localMessages = cloudList;
+            this.saveLocal();
+            this.renderMessages();
+            if (hasNewAdmin) {
+              window.soundEngine.playWin();
+              showToast('💬 Admin Nhà Cái Tumiz vừa phản hồi tin nhắn của bạn!');
+              if (!this.isOpen && el.cskhUserUnreadBadge) {
+                el.cskhUserUnreadBadge.classList.remove('hidden');
+              }
+            }
+          }
+          if (thread.unreadByUser && this.isOpen) {
+            CLOUD_SYNC.markThreadRead(user.username, 'user');
+          }
+        }
+      } catch (e) {}
+    }
+  };
+
+  // --- ADMIN CSKH MANAGER ---
+  async function refreshAdminCskhData() {
+    if (!el.adminContentCskh || el.adminContentCskh.classList.contains('hidden')) return;
+    if (!CLOUD_SYNC.isConnected()) {
+      if (el.adminCskhThreadsList) {
+        el.adminCskhThreadsList.innerHTML = `<div class="empty-threads-hint">Chưa kết nối Đám Mây Firebase.</div>`;
+      }
+      return;
+    }
+
+    try {
+      const threads = await CLOUD_SYNC.fetchSupportThreads();
+      CSKH.cachedThreads = threads || {};
+
+      const threadKeys = Object.keys(CSKH.cachedThreads);
+      let unreadTotal = 0;
+
+      threadKeys.forEach(k => {
+        if (CSKH.cachedThreads[k].unreadByAdmin) unreadTotal++;
+      });
+
+      if (el.badgeCskhUnread) el.badgeCskhUnread.textContent = unreadTotal;
+
+      if (threadKeys.length === 0) {
+        el.adminCskhThreadsList.innerHTML = `<div class="empty-threads-hint">Chưa có người chơi nào gửi tin nhắn hỗ trợ.</div>`;
+      } else {
+        el.adminCskhThreadsList.innerHTML = threadKeys.map(uname => {
+          const t = CSKH.cachedThreads[uname];
+          const isActive = (CSKH.activeAdminUser === uname);
+          const unreadBadge = t.unreadByAdmin ? '<span class="admin-thread-badge">MỚI</span>' : '';
+          const userVip = t.vip || 1;
+          const tier = VIP_TIERS[userVip] || VIP_TIERS[1];
+          return `
+            <div class="admin-thread-item ${isActive ? 'active' : ''}" data-user="${uname}">
+              <div class="admin-thread-top">
+                <span class="admin-thread-user">@${uname} <small style="color:#fbbf24; font-size:10px;">[${tier.badge}]</small>${unreadBadge}</span>
+                <span class="admin-thread-time">${t.lastTime || ''}</span>
+              </div>
+              <div class="admin-thread-snippet">${t.lastMessage || 'Chưa có tin nhắn'}</div>
+            </div>
+          `;
+        }).join('');
+      }
+
+      if (CSKH.activeAdminUser && CSKH.cachedThreads[CSKH.activeAdminUser]) {
+        renderAdminChatView(CSKH.activeAdminUser);
+      }
+    } catch (e) {
+      console.warn('[Admin CSKH] Error loading threads:', e);
+    }
+  }
+
+  function renderAdminChatView(username) {
+    CSKH.activeAdminUser = username;
+    const thread = CSKH.cachedThreads[username];
+    if (!thread) return;
+
+    if (el.adminCskhActiveUser) {
+      const userObj = AUTH.users[username] || {};
+      const vipNum = thread.vip || userObj.vip || 1;
+      const tier = VIP_TIERS[vipNum] || VIP_TIERS[1];
+      el.adminCskhActiveUser.innerHTML = `
+        💬 Đang chat với: <strong style="color:#38bdf8;">@${username}</strong> 
+        <span style="background:rgba(245,158,11,0.2); color:#fbbf24; padding:2px 8px; border-radius:6px; font-size:11px; margin-left:8px;">${tier.badge} ${tier.title}</span>
+        <span style="color:#4ade80; font-size:11px; margin-left:8px;">Số dư: ${formatMoney(userObj.balance || 0)} ₫</span>
+      `;
+    }
+
+    const messages = thread.messages ? Object.values(thread.messages).sort((a, b) => a.timestamp - b.timestamp) : [];
+
+    if (el.adminCskhMessages) {
+      if (messages.length === 0) {
+        el.adminCskhMessages.innerHTML = `<div class="empty-chat-hint">Chưa có tin nhắn nào trong cuộc trò chuyện này.</div>`;
+      } else {
+        el.adminCskhMessages.innerHTML = messages.map(m => {
+          let senderName = `@${username}`;
+          let cls = 'user';
+          if (m.sender === 'admin') {
+            senderName = '👑 Bạn (Admin Nhà Cái Tumiz)';
+            cls = 'admin';
+          } else if (m.sender === 'bot') {
+            senderName = '🤖 Trợ Lý Tự Động';
+            cls = 'bot';
+          }
+          return `
+            <div class="cskh-msg ${cls}">
+              <span class="cskh-msg-sender">${senderName}</span>
+              <div class="cskh-bubble">${m.text.replace(/\n/g, '<br>')}</div>
+              <span class="cskh-msg-time">${m.time || ''}</span>
+            </div>
+          `;
+        }).join('');
+        el.adminCskhMessages.scrollTop = el.adminCskhMessages.scrollHeight;
+      }
+    }
+
+    if (thread.unreadByAdmin) {
+      CLOUD_SYNC.markThreadRead(username, 'admin');
+      thread.unreadByAdmin = false;
+      const unreadCount = Object.values(CSKH.cachedThreads).filter(t => t.unreadByAdmin).length;
+      if (el.badgeCskhUnread) el.badgeCskhUnread.textContent = unreadCount;
+    }
+  }
+
+  async function sendAdminReply(replyText) {
+    replyText = replyText.trim();
+    if (!replyText || !CSKH.activeAdminUser) return;
+    const targetUser = CSKH.activeAdminUser;
+
+    const replyMsg = {
+      id: 'admin_' + Date.now(),
+      sender: 'admin',
+      text: replyText,
+      time: new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }),
+      timestamp: Date.now()
+    };
+
+    if (CLOUD_SYNC.isConnected()) {
+      await CLOUD_SYNC.sendSupportMessage(targetUser, replyMsg);
+    }
+
+    if (!CSKH.cachedThreads[targetUser]) CSKH.cachedThreads[targetUser] = { messages: {} };
+    if (!CSKH.cachedThreads[targetUser].messages) CSKH.cachedThreads[targetUser].messages = {};
+    CSKH.cachedThreads[targetUser].messages[replyMsg.id] = replyMsg;
+    CSKH.cachedThreads[targetUser].lastMessage = replyText;
+    CSKH.cachedThreads[targetUser].lastSender = 'admin';
+    CSKH.cachedThreads[targetUser].lastTime = replyMsg.time;
+
+    renderAdminChatView(targetUser);
+    showToast(`✅ Đã gửi phản hồi đến người chơi @${targetUser}!`);
+    window.soundEngine.playChip();
+  }
+
   function setupAdminDelegations() {
     // Deposit table buttons
     el.adminDepListBody.addEventListener('click', async (e) => {
@@ -2671,6 +3263,7 @@
 
         const user = AUTH.users[uname];
         user.balance = (user.balance || 0) + amt;
+        user.totalDeposited = (user.totalDeposited || 0) + amt;
 
         if (user.deposits) {
           const dItem = user.deposits.find(item => item.code === code);
@@ -2678,15 +3271,16 @@
           else if (user.deposits[idx]) user.deposits[idx].status = 'Thành Công';
         }
 
+        checkVipLevelUp(user);
         AUTH.save();
 
-        // 3. Sync updated balance to Cloud so player's phone receives it immediately!
-        await CLOUD_SYNC.updateUserBalance(uname, user.balance);
+        // 3. Sync updated balance & VIP to Cloud so player's phone receives it immediately!
+        await CLOUD_SYNC.updateUserVipAndBalance(uname, user.vip, user.balance, user.totalDeposited);
 
         updateAuthHeaderUI();
         await refreshAdminData();
         window.soundEngine.playJackpot();
-        showToast(`✅ Đã duyệt cộng +${formatMoney(amt)} ₫ cho tài khoản [${uname}]!`);
+        showToast(`✅ Đã duyệt cộng +${formatMoney(amt)} ₫ cho tài khoản [${uname}] (VIP ${user.vip || 1})!`);
       } else {
         await CLOUD_SYNC.updateCloudDepositStatus(cloudKey, cloudSource, code, 'Từ Chối');
 
@@ -2981,17 +3575,6 @@
       }
     });
 
-    // Quick Guest button
-    el.btnQuickGuest.addEventListener('click', async () => {
-      const guestName = 'khach_' + Math.floor(1000 + Math.random() * 9000);
-      await AUTH.register(guestName, '123456');
-      updateAuthHeaderUI();
-      renderUserHistoryTable();
-      closeAuthModal();
-      window.soundEngine.playWin();
-      showToast(`Chơi với tài khoản khách: ${guestName}! Được hoàn tiền 100% vé cược đầu nếu thua (từ 10k)!`, 4500);
-    });
-
     // Admin PIN Modal Verification
     if (el.adminPinForm) {
       el.adminPinForm.addEventListener('submit', (e) => {
@@ -3131,33 +3714,6 @@
       });
     }
 
-    // Quick test deposit button in deposit modal
-    if (el.btnQuickTestDeposit) {
-      el.btnQuickTestDeposit.addEventListener('click', () => {
-        const user = AUTH.getUser();
-        if (!user) {
-          showToast('Vui lòng đăng nhập trước khi nạp thử nghiệm!');
-          openAuthModal('login');
-          return;
-        }
-        user.balance += 50000;
-        if (!user.deposits) user.deposits = [];
-        user.deposits.unshift({
-          code: 'NAP TEST50K',
-          amount: 50000,
-          bank: 'TEST THỬ NGHIỆM',
-          stk: '-',
-          time: new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN'),
-          status: 'Thành Công'
-        });
-        AUTH.save();
-        updateAuthHeaderUI();
-        closeDepositModal();
-        window.soundEngine.playChip();
-        showToast('✅ Đã nạp thử nghiệm +50.000 ₫! Bạn có thể cược 20.000 ₫ ngay để test tính năng hoàn tiền!');
-      });
-    }
-
     // Deposit Modal events
     el.btnOpenDeposit.addEventListener('click', openDepositModal);
     el.btnCloseDeposit.addEventListener('click', closeDepositModal);
@@ -3268,6 +3824,82 @@
       });
     }
 
+    // Header Login Button
+    if (el.btnHeaderLogin) {
+      el.btnHeaderLogin.addEventListener('click', () => openAuthModal('login'));
+    }
+
+    // VIP Modal Events
+    if (el.displayVip) {
+      el.displayVip.addEventListener('click', openVipModal);
+    }
+    if (el.btnCloseVipModal) {
+      el.btnCloseVipModal.addEventListener('click', closeVipModal);
+    }
+    if (el.vipModal) {
+      el.vipModal.addEventListener('click', (e) => {
+        if (e.target === el.vipModal) closeVipModal();
+      });
+    }
+
+    // CSKH Client Widget & Chat Box Events
+    if (el.cskhFloatingBtn) {
+      el.cskhFloatingBtn.addEventListener('click', () => CSKH.toggleChat());
+    }
+    if (el.btnCloseCskhChat) {
+      el.btnCloseCskhChat.addEventListener('click', () => CSKH.closeChat());
+    }
+    if (el.cskhChatForm) {
+      el.cskhChatForm.addEventListener('submit', (e) => {
+        e.preventDefault();
+        if (!el.cskhChatInput) return;
+        const txt = el.cskhChatInput.value.trim();
+        if (txt) {
+          CSKH.sendUserMessage(txt);
+          el.cskhChatInput.value = '';
+        }
+      });
+    }
+    if (el.cskhChips) {
+      el.cskhChips.forEach(chip => {
+        chip.addEventListener('click', () => {
+          const q = chip.getAttribute('data-q') || chip.textContent.trim();
+          CSKH.sendUserMessage(q);
+        });
+      });
+    }
+
+    // Admin CSKH Events
+    if (el.tabBtnAdminCskh) {
+      el.tabBtnAdminCskh.addEventListener('click', () => switchAdminTab('cskh'));
+    }
+    if (el.btnRefreshCskh) {
+      el.btnRefreshCskh.addEventListener('click', refreshAdminCskhData);
+    }
+    if (el.adminCskhThreadsList) {
+      el.adminCskhThreadsList.addEventListener('click', (e) => {
+        const item = e.target.closest('.admin-thread-item');
+        if (!item) return;
+        const uname = item.getAttribute('data-user');
+        if (uname) {
+          document.querySelectorAll('.admin-thread-item').forEach(it => it.classList.remove('active'));
+          item.classList.add('active');
+          renderAdminChatView(uname);
+        }
+      });
+    }
+    if (el.adminCskhReplyForm) {
+      el.adminCskhReplyForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!el.adminCskhReplyInput) return;
+        const txt = el.adminCskhReplyInput.value.trim();
+        if (txt) {
+          await sendAdminReply(txt);
+          el.adminCskhReplyInput.value = '';
+        }
+      });
+    }
+
     setupCopyButtons();
 
     window.addEventListener('click', () => {
@@ -3279,6 +3911,7 @@
   function init() {
     AUTH.load();
     loadPersistedData();
+    CSKH.init();
     updateAuthHeaderUI();
     updateBetDisplays();
     setupEvents();
@@ -3296,6 +3929,9 @@
     setInterval(async () => {
       const user = AUTH.getUser();
       if (!user || AUTH.isAdmin()) return;
+
+      // Sync CSKH messages if chat is open or periodically
+      CSKH.syncFromCloud();
 
       // 1. Sync live balance from cloud (in case Admin pumped/drained money or approved deposit)
       if (CLOUD_SYNC.isConnected()) {
@@ -3323,6 +3959,8 @@
           if (match && match.status === 'Thành Công') {
             pendingDep.status = 'Thành Công';
             user.balance += pendingDep.amount;
+            user.totalDeposited = (user.totalDeposited || 0) + pendingDep.amount;
+            checkVipLevelUp(user);
             AUTH.save();
             updateAuthHeaderUI();
             renderDepositHistoryTable();
@@ -3368,6 +4006,9 @@
       if (el.adminModal && el.adminModal.classList.contains('active')) {
         await refreshAdminData();
         await updateAdminLiveBetsRadar();
+        if (el.adminContentCskh && !el.adminContentCskh.classList.contains('hidden')) {
+          await refreshAdminCskhData();
+        }
       }
     }, 2000);
   }

@@ -25,14 +25,15 @@
       <div class="user-stats">
         <!-- Account Info Block -->
         <div class="account-block" id="accountBlock">
-          <div class="user-avatar-badge" id="btnUserMenu" title="Bấm để xem/đổi tài khoản">
+          <div class="user-avatar-badge" id="btnUserMenu" title="Bấm để đăng nhập/đăng ký tài khoản">
             <span class="avatar-icon">👑</span>
             <div class="user-meta">
-              <span class="user-name" id="displayUsername">Khách</span>
-              <span class="vip-tag" id="displayVip">VIP 1</span>
+              <span class="user-name" id="displayUsername">Chưa Đăng Nhập</span>
+              <span class="vip-tag vip-clickable" id="displayVip" title="Bấm để xem Bảng Đặc Quyền VIP 1 - 10">VIP 1</span>
             </div>
           </div>
-          <button id="btnLogout" class="btn-logout" title="Đăng xuất khỏi tài khoản">Thoát</button>
+          <button id="btnHeaderLogin" class="btn-header-login" title="Đăng nhập hoặc đăng ký">🔑 Đăng Nhập</button>
+          <button id="btnLogout" class="btn-logout" title="Đăng xuất khỏi tài khoản" style="display:none;">Thoát</button>
         </div>
 
         <div class="balance-card">
@@ -508,14 +509,13 @@
           </div>
           <div class="form-actions">
             <button type="submit" class="btn-primary-modal">ĐĂNG NHẬP NGAY</button>
-            <button type="button" class="btn-quick-guest" id="btnQuickGuest">⚡ Chơi Nhanh (Khách Demo)</button>
           </div>
         </form>
 
         <!-- Register Form -->
         <form class="auth-form hidden" id="registerForm">
           <div class="bonus-notice promo-refund">
-            🛡️ <strong>ĐẶC QUYỀN TÂN THỦ:</strong> Hoàn tiền 100% vé cược đầu tiên nếu thua (Áp dụng khi cược từ 10.000 ₫ trở lên)!
+            🛡️ <strong>BẢO HIỂM TÂN THỦ DUY NHẤT 1 LẦN:</strong> Hoàn tiền 100% vé cược đầu tiên nếu thua (Áp dụng duy nhất 1 lần cho tài khoản đã đăng nhập khi cược từ 10.000 ₫ trở lên)!
           </div>
           <div class="form-group">
             <label for="regUsername">Tên đăng nhập mới:</label>
@@ -617,12 +617,6 @@
             <button class="btn-primary-modal btn-generate-bill" id="btnGenerateBill">
               👉 TẠO LỆNH NẠP & LẤY MÃ VIETQR BIDV
             </button>
-
-            <div class="test-deposit-wrap">
-              <button type="button" class="btn-quick-test-dep" id="btnQuickTestDeposit">
-                ⚡ Nạp Thử Nghiệm 50.000 ₫ (Để test ngay ván cược 20k)
-              </button>
-            </div>
           </div>
 
           <!-- Step 2: Hóa đơn & VietQR (sau khi tạo lệnh) -->
@@ -976,6 +970,7 @@
         <div class="admin-tabs">
           <button class="admin-tab active" id="tabBtnAdminDep">📥 Duyệt Nạp (<span id="badgePendingDep">0</span>)</button>
           <button class="admin-tab" id="tabBtnAdminWithdraw">📤 Duyệt Rút (<span id="badgePendingWithdraw">0</span>)</button>
+          <button class="admin-tab" id="tabBtnAdminCskh">🎧 CSKH Trực Tuyến (<span id="badgeCskhUnread">0</span>)</button>
           <button class="admin-tab" id="tabBtnAdminUsers">👥 Quản Lý Thành Viên (<span id="badgeTotalUsers">0</span>)</button>
           <button class="admin-tab" id="tabBtnAdminInflate">⚖️ Bơm / Hút Tiền</button>
           <button class="admin-tab" id="tabBtnAdminSecurity">🔐 Đổi Mật Khẩu</button>
@@ -1153,7 +1148,144 @@
           </div>
         </div>
 
+        <!-- Tab CSKH Trực Tuyến: Admin xem & trả lời tin nhắn người chơi -->
+        <div class="admin-tab-content hidden" id="adminContentCskh">
+          <div class="admin-panel-title">
+            <span>💬 Hộp Thư Hỗ Trợ Khách Hàng 24/7 (Phản hồi người chơi thời gian thực):</span>
+            <button class="btn-refresh-admin" id="btnRefreshCskh">🔄 Quét tin mới</button>
+          </div>
+          <div class="admin-cskh-layout">
+            <!-- Cột trái: Danh sách người chơi gửi tin -->
+            <div class="admin-cskh-threads-list" id="adminCskhThreadsList">
+              <div class="empty-threads-hint">Đang tải danh sách người chơi...</div>
+            </div>
+            <!-- Cột phải: Khung chat chi tiết với người chơi được chọn -->
+            <div class="admin-cskh-chat-panel" id="adminCskhChatPanel">
+              <div class="admin-cskh-chat-header" id="adminCskhChatHeader">
+                <span class="chat-target-user" id="adminCskhActiveUser">Chọn một người chơi ở bên trái để xem tin nhắn</span>
+              </div>
+              <div class="admin-cskh-messages" id="adminCskhMessages">
+                <div class="empty-chat-hint">Chưa chọn cuộc trò chuyện nào.</div>
+              </div>
+              <form class="admin-cskh-reply-form" id="adminCskhReplyForm">
+                <input type="text" id="adminCskhReplyInput" placeholder="Nhập câu trả lời gửi đến người chơi..." required autocomplete="off">
+                <button type="submit" class="btn-primary-modal" id="btnAdminSendReply">Gửi Phản Hồi 📤</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+    <!-- VIP Tiers Modal (VIP 1 - VIP 10) -->
+    <div class="modal-overlay" id="vipModal">
+      <div class="modal-card modal-vip">
+        <div class="modal-header">
+          <div class="vip-header-title">
+            <span class="vip-crown-icon">👑</span>
+            <h2>BẢNG ĐẶC QUYỀN VIP 1 - 10</h2>
+          </div>
+          <button class="btn-close-modal" id="btnCloseVipModal">✕</button>
+        </div>
+
+        <div class="modal-body vip-modal-body">
+          <!-- Current User VIP Status Card -->
+          <div class="vip-status-card">
+            <div class="vip-status-left">
+              <div class="vip-current-badge-wrap">
+                <span class="vip-current-badge" id="vipModalCurrentBadge">VIP 1</span>
+                <span class="vip-current-title" id="vipModalCurrentTitle">Tân Thủ</span>
+              </div>
+            </div>
+            <div class="vip-status-right">
+              <div class="vip-progress-info">
+                <span>Tiến trình lên cấp tiếp theo:</span>
+                <strong id="vipProgressRatio">0 / 200.000 ₫</strong>
+              </div>
+              <div class="vip-progress-bar-wrap">
+                <div class="vip-progress-bar-fill" id="vipProgressBarFill" style="width: 0%;"></div>
+              </div>
+              <div class="vip-dep-total">
+                Tổng nạp tích lũy: <strong id="vipModalTotalDep" class="win-text">0 ₫</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- VIP Perks Tiers Table -->
+          <div class="vip-tiers-table-wrap">
+            <table class="vip-tiers-table">
+              <thead>
+                <tr>
+                  <th>Cấp VIP</th>
+                  <th>Tổng Nạp Tối Thiểu</th>
+                  <th>Thưởng Thăng Cấp</th>
+                  <th>Hoàn Cược Tuần</th>
+                  <th>Đặc Quyền Riêng</th>
+                  <th>Trạng Thái</th>
+                </tr>
+              </thead>
+              <tbody id="vipTiersTableBody">
+                <!-- Generated dynamically by JS -->
+              </tbody>
+            </table>
+          </div>
+
+          <div class="vip-note-box">
+            💡 <strong>Quy định nâng cấp VIP:</strong> Điểm VIP được tích lũy tự động khi lệnh nạp tiền vào STK BIDV <code>8860252059</code> được duyệt thành công. Tiền thưởng thăng cấp sẽ được cộng trực tiếp vào ví ngay khi đạt mốc!
+          </div>
+        </div>
       </div>
+    </div>
+
+    <!-- Floating CSKH Widget & AI Chat Box -->
+    <div class="cskh-widget-container" id="cskhWidgetContainer">
+      <button class="cskh-floating-btn" id="cskhFloatingBtn" title="Hỗ trợ trực tuyến 24/7">
+        <div class="cskh-btn-icon">
+          <span class="cskh-bot-avatar">🤖</span>
+          <span class="cskh-online-pulse"></span>
+        </div>
+        <div class="cskh-btn-text">
+          <span class="cskh-btn-title">CSKH 24/7</span>
+          <small class="cskh-btn-sub">Hỗ trợ & AI giải đáp</small>
+        </div>
+        <span class="cskh-unread-badge hidden" id="cskhUserUnreadBadge">0</span>
+      </button>
+    </div>
+
+    <!-- CSKH Chat Box Popup -->
+    <div class="cskh-chat-box hidden" id="cskhChatBox">
+      <div class="cskh-chat-header">
+        <div class="cskh-header-info">
+          <div class="cskh-avatar-wrap">
+            <span class="cskh-avatar">🤖</span>
+            <span class="status-dot online"></span>
+          </div>
+          <div class="cskh-header-titles">
+            <strong>Trợ Lý CSKH Tumiz 24/7</strong>
+            <small>🟢 Trực tuyến • Phản hồi tức thì</small>
+          </div>
+        </div>
+        <div class="cskh-header-actions">
+          <button type="button" class="btn-cskh-close" id="btnCloseCskhChat">✕</button>
+        </div>
+      </div>
+
+      <div class="cskh-chat-body" id="cskhChatMessages">
+        <!-- Messages rendered dynamically -->
+      </div>
+
+      <!-- Quick suggestion chips -->
+      <div class="cskh-quick-chips">
+        <button type="button" class="cskh-chip" data-query="Nạp tiền như thế nào?">💳 Nạp tiền</button>
+        <button type="button" class="cskh-chip" data-query="Rút tiền tối thiểu bao nhiêu?">💸 Rút tiền</button>
+        <button type="button" class="cskh-chip" data-query="Quy định hoàn tiền tân thủ?">🛡️ Hoàn tiền</button>
+        <button type="button" class="cskh-chip" data-query="Bảng quyền lợi VIP 1-10?">👑 Cấp VIP</button>
+      </div>
+
+      <form class="cskh-input-bar" id="cskhChatForm">
+        <input type="text" id="cskhChatInput" placeholder="Nhập câu hỏi hoặc yêu cầu hỗ trợ..." maxlength="300" autocomplete="off" required>
+        <button type="submit" class="btn-cskh-send" id="btnCskhSend" title="Gửi tin nhắn">
+          <span>Gửi ✈️</span>
+        </button>
+      </form>
     </div>
 
   </div>
