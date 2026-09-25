@@ -168,9 +168,7 @@
     bets: {
       tai: 0,
       xiu: 0,
-      triple: 0,
-      even: 0,
-      odd: 0
+      triple: 0
     },
     simulatedBets: {
       tai: 18500000,
@@ -247,6 +245,9 @@
     winnerTitle: document.getElementById('winnerTitle'),
 
     // Bet spots
+    spotTai: document.getElementById('spotTai'),
+    spotXiu: document.getElementById('spotXiu'),
+    spotTriple: document.getElementById('spotTriple'),
     totalBetTai: document.getElementById('totalBetTai'),
     totalBetXiu: document.getElementById('totalBetXiu'),
     userCountTai: document.getElementById('userCountTai'),
@@ -254,15 +255,13 @@
     myBetTaiVal: document.getElementById('myBetTaiVal'),
     myBetXiuVal: document.getElementById('myBetXiuVal'),
     myBetTripleVal: document.getElementById('myBetTripleVal'),
-    myBetEven: document.getElementById('myBetEven'),
-    myBetOdd: document.getElementById('myBetOdd'),
 
     // Control buttons
     btnDouble: document.getElementById('btnDouble'),
     btnAllIn: document.getElementById('btnAllIn'),
     btnClearBet: document.getElementById('btnClearBet'),
     chips: document.querySelectorAll('.chip'),
-    betSpots: document.querySelectorAll('.bet-spot, .bet-spot-mini'),
+    betSpots: document.querySelectorAll('.bet-spot'),
 
     // Soi Cau & History
     beadRoad: document.getElementById('beadRoad'),
@@ -517,13 +516,29 @@
     el.myBetTaiVal.textContent = formatMoney(STATE.bets.tai) + ' ₫';
     el.myBetXiuVal.textContent = formatMoney(STATE.bets.xiu) + ' ₫';
     el.myBetTripleVal.textContent = formatMoney(STATE.bets.triple) + ' ₫';
-    el.myBetEven.textContent = formatMoney(STATE.bets.even) + ' ₫';
-    el.myBetOdd.textContent = formatMoney(STATE.bets.odd) + ' ₫';
 
     el.totalBetTai.textContent = formatMoney(STATE.simulatedBets.tai + STATE.bets.tai) + ' ₫';
     el.totalBetXiu.textContent = formatMoney(STATE.simulatedBets.xiu + STATE.bets.xiu) + ' ₫';
     el.userCountTai.textContent = STATE.simulatedBets.taiUsers + (STATE.bets.tai > 0 ? 1 : 0);
     el.userCountXiu.textContent = STATE.simulatedBets.xiuUsers + (STATE.bets.xiu > 0 ? 1 : 0);
+
+    // RULE: "chỉ được cược 1 trong 3 loại, đã cược tài r thì không được cược xỉu, đã cược xỉu rồi thì không được cược tài và tương tự cho bão"
+    const hasTai = (STATE.bets.tai > 0);
+    const hasXiu = (STATE.bets.xiu > 0);
+    const hasTriple = (STATE.bets.triple > 0);
+
+    if (el.spotTai) {
+      el.spotTai.classList.toggle('locked-spot', hasXiu || hasTriple);
+      el.spotTai.classList.toggle('active-chosen-spot', hasTai);
+    }
+    if (el.spotXiu) {
+      el.spotXiu.classList.toggle('locked-spot', hasTai || hasTriple);
+      el.spotXiu.classList.toggle('active-chosen-spot', hasXiu);
+    }
+    if (el.spotTriple) {
+      el.spotTriple.classList.toggle('locked-spot', hasTai || hasXiu);
+      el.spotTriple.classList.toggle('active-chosen-spot', hasTriple);
+    }
   }
 
   // --- 3D 6-FACE DICE ENGINE ---
@@ -553,6 +568,45 @@
 
     if (STATE.isRolling || STATE.isRevealing) {
       showToast('Đang lắc hoặc mở bát, vui lòng chờ phiên sau!');
+      return;
+    }
+
+    // RULE: "sửa luôn cả luật, chỉ được cược 1 trong 3 loại, đã cược tài r thì không được cược xỉu, đã cược xỉu rồi thì không được cược tài và tương tự cho bão"
+    if (type === 'tai') {
+      if (STATE.bets.xiu > 0) {
+        showToast('⚠️ Bạn đã cược XỈU rồi, không thể cược thêm TÀI! (Bấm HỦY CƯỢC nếu muốn đổi cửa)');
+        window.soundEngine.playLoss();
+        return;
+      }
+      if (STATE.bets.triple > 0) {
+        showToast('⚠️ Bạn đã cược BÃO rồi, không thể cược thêm TÀI! (Bấm HỦY CƯỢC nếu muốn đổi cửa)');
+        window.soundEngine.playLoss();
+        return;
+      }
+    } else if (type === 'xiu') {
+      if (STATE.bets.tai > 0) {
+        showToast('⚠️ Bạn đã cược TÀI rồi, không thể cược thêm XỈU! (Bấm HỦY CƯỢC nếu muốn đổi cửa)');
+        window.soundEngine.playLoss();
+        return;
+      }
+      if (STATE.bets.triple > 0) {
+        showToast('⚠️ Bạn đã cược BÃO rồi, không thể cược thêm XỈU! (Bấm HỦY CƯỢC nếu muốn đổi cửa)');
+        window.soundEngine.playLoss();
+        return;
+      }
+    } else if (type === 'triple') {
+      if (STATE.bets.tai > 0) {
+        showToast('⚠️ Bạn đã cược TÀI rồi, không thể cược thêm BÃO! (Bấm HỦY CƯỢC nếu muốn đổi cửa)');
+        window.soundEngine.playLoss();
+        return;
+      }
+      if (STATE.bets.xiu > 0) {
+        showToast('⚠️ Bạn đã cược XỈU rồi, không thể cược thêm BÃO! (Bấm HỦY CƯỢC nếu muốn đổi cửa)');
+        window.soundEngine.playLoss();
+        return;
+      }
+    } else {
+      showToast('⚠️ Chỉ được cược 1 trong 3 loại: TÀI, XỈU hoặc BÃO!');
       return;
     }
 
@@ -631,8 +685,15 @@
       return;
     }
 
-    let target = 'tai';
-    if (STATE.bets.xiu > STATE.bets.tai) target = 'xiu';
+    let target = null;
+    if (STATE.bets.tai > 0) target = 'tai';
+    else if (STATE.bets.xiu > 0) target = 'xiu';
+    else if (STATE.bets.triple > 0) target = 'triple';
+
+    if (!target) {
+      showToast('👉 Vui lòng nhấp vào cửa muốn cược (TÀI, XỈU hoặc BÃO) trước khi ALL-IN!');
+      return;
+    }
 
     const amount = user.balance;
     STATE.bets[target] += amount;
@@ -642,7 +703,8 @@
     window.soundEngine.playChip();
     updateAuthHeaderUI();
     updateBetDisplays();
-    showToast(`🔥 ĐÃ ALL-IN ${formatMoney(amount)} ₫ vào ${target === 'tai' ? 'TÀI' : 'XỈU'}!`);
+    const targetName = target === 'tai' ? 'TÀI' : (target === 'xiu' ? 'XỈU' : 'BÃO');
+    showToast(`🔥 ĐÃ ALL-IN ${formatMoney(amount)} ₫ vào ${targetName}!`);
   }
 
   // --- SESSION & ROLLING ENGINE ---
@@ -879,30 +941,6 @@
           }
         }
 
-        // Cược CHẴN / LẺ (1:1.95)
-        if (STATE.bets.even > 0) {
-          totalBet += STATE.bets.even;
-          betItems.push(`Chẵn: ${formatMoney(STATE.bets.even)} ₫`);
-          if (isEven) {
-            const winAmt = Math.floor(STATE.bets.even * 1.95);
-            netWin += Math.floor(STATE.bets.even * 0.95);
-            user.balance += winAmt;
-          } else {
-            netWin -= STATE.bets.even;
-          }
-        }
-
-        if (STATE.bets.odd > 0) {
-          totalBet += STATE.bets.odd;
-          betItems.push(`Lẻ: ${formatMoney(STATE.bets.odd)} ₫`);
-          if (!isEven) {
-            const winAmt = Math.floor(STATE.bets.odd * 1.95);
-            netWin += Math.floor(STATE.bets.odd * 0.95);
-            user.balance += winAmt;
-          } else {
-            netWin -= STATE.bets.odd;
-          }
-        }
 
         // Check First Bet 100% Refund Promotion:
         // RULE: "hoàn tiền vé cược đầu khi đánh trên 10k, ví dụ đánh 20k thua thì vẫn sẽ được hoàn lại tiền sau đó thì mọi thứ như bình thường"
