@@ -1912,3 +1912,401 @@ body {
   display: none;
 }
 
+/* ==========================================================================
+   VIP CASINO REALTIME SOI CẦU STYLING
+   ========================================================================== */
+.live-pulse-badge {
+  background: rgba(239, 68, 68, 0.2);
+  color: #fca5a5;
+  border: 1px solid #ef4444;
+  font-size: 0.72rem;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  animation: pulseLiveBadge 1.8s infinite;
+}
+
+@keyframes pulseLiveBadge {
+  0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  50% { opacity: 0.75; box-shadow: 0 0 10px 2px rgba(239, 68, 68, 0.3); }
+}
+
+.road-subtitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.trend-badge {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+/* Thanh tỷ lệ % đồ họa Tài vs Xỉu */
+.ratio-bar-wrap {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid var(--border-subtle);
+  border-radius: 12px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+}
+
+.ratio-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+
+.lbl-tai { color: #f87171; }
+.lbl-xiu { color: #60a5fa; }
+.lbl-center { color: var(--text-muted); font-size: 0.75rem; }
+
+.ratio-bar {
+  display: flex;
+  height: 12px;
+  background: rgba(0, 0, 0, 0.5);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+.ratio-fill-tai {
+  background: linear-gradient(90deg, #dc2626, #ef4444);
+  height: 100%;
+  transition: width 0.4s ease;
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.5);
+}
+
+.ratio-fill-xiu {
+  background: linear-gradient(90deg, #3b82f6, #2563eb);
+  height: 100%;
+  transition: width 0.4s ease;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+}
+
+/* Ma trận Cầu Giọt Nước 6 Hàng (Bead Plate Matrix) */
+.bead-matrix-container {
+  width: 100%;
+  overflow-x: auto;
+  background: rgba(10, 15, 29, 0.75);
+  border: 1px solid var(--border-subtle);
+  border-radius: 14px;
+  padding: 12px;
+  margin-bottom: 14px;
+  box-shadow: inset 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+
+.bead-matrix-grid {
+  display: grid;
+  grid-template-rows: repeat(6, 38px);
+  grid-auto-flow: column;
+  grid-auto-columns: 38px;
+  gap: 6px;
+  min-width: 100%;
+}
+
+.bead-cell {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  color: #fff;
+  position: relative;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.5), inset 0 2px 3px rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  transition: transform 0.2s;
+  user-select: none;
+}
+
+.bead-cell:hover {
+  transform: scale(1.15);
+  z-index: 5;
+}
+
+.bead-cell.tài {
+  background: radial-gradient(circle at 35% 35%, #f87171, #b91c1c);
+  border: 2px solid #fca5a5;
+}
+
+.bead-cell.xỉu {
+  background: radial-gradient(circle at 35% 35%, #60a5fa, #1d4ed8);
+  border: 2px solid #93c5fd;
+}
+
+.bead-cell.triple {
+  background: radial-gradient(circle at 35% 35%, #fef08a, #d97706);
+  border: 2px solid #fbbf24;
+  color: #000;
+}
+
+.bead-char {
+  font-size: 0.82rem;
+  line-height: 1;
+}
+
+.bead-sub {
+  font-size: 0.58rem;
+  font-weight: 800;
+  opacity: 0.95;
+  line-height: 1;
+  margin-top: 1px;
+}
+
+.bead-cell.latest {
+  animation: beadPulseGlow 1.4s infinite;
+}
+
+@keyframes beadPulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7), 0 3px 6px rgba(0, 0, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 16px 4px rgba(251, 191, 36, 0.9), 0 3px 6px rgba(0, 0, 0, 0.5);
+  }
+}
+
+.bead-new-tag {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background: #f59e0b;
+  color: #000;
+  font-size: 0.52rem;
+  font-weight: 900;
+  padding: 1px 4px;
+  border-radius: 4px;
+  box-shadow: 0 0 6px #f59e0b;
+}
+
+/* Dòng 5 Phiên Vừa Ra */
+.recent-stream-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 10px;
+  padding: 8px 12px;
+}
+
+.stream-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--gold-light);
+  white-space: nowrap;
+}
+
+.recent-stream-pills {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  flex: 1;
+}
+
+.recent-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 3px 8px;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.pill-tai { border-color: rgba(239, 68, 68, 0.4); color: #fca5a5; }
+.pill-xiu { border-color: rgba(59, 130, 246, 0.4); color: #93c5fd; }
+.pill-triple { border-color: rgba(245, 158, 11, 0.6); color: #fef08a; }
+
+/* ==========================================================================
+   ADMIN LIVE BETTING RADAR STYLING
+   ========================================================================== */
+.admin-live-bets-card {
+  background: linear-gradient(135deg, rgba(30, 27, 75, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 2px solid var(--border-gold);
+  border-radius: 16px;
+  padding: 18px;
+  margin-bottom: 20px;
+  box-shadow: 0 0 25px rgba(245, 158, 11, 0.15);
+}
+
+.admin-bets-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 14px 0;
+}
+
+@media (max-width: 680px) {
+  .admin-bets-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-bet-col {
+  background: rgba(15, 23, 42, 0.65);
+  border-radius: 12px;
+  padding: 12px;
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-bet-col.col-tai { border-color: rgba(239, 68, 68, 0.4); }
+.admin-bet-col.col-xiu { border-color: rgba(59, 130, 246, 0.4); }
+.admin-bet-col.col-bao { border-color: rgba(245, 158, 11, 0.4); }
+
+.admin-bet-col-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  margin-bottom: 8px;
+}
+
+.col-title { font-weight: 800; font-size: 0.85rem; }
+.col-tai .col-title { color: #f87171; }
+.col-xiu .col-title { color: #60a5fa; }
+.col-bao .col-title { color: #fbbf24; }
+
+.col-total { font-weight: 900; font-size: 0.95rem; color: #fff; }
+
+.admin-bet-users-list {
+  max-height: 120px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font-size: 0.78rem;
+}
+
+.admin-bet-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.04);
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.admin-bet-user {
+  font-weight: 700;
+  color: #38bdf8;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-bet-amt {
+  font-weight: 800;
+  color: #34d399;
+}
+
+.empty-bet-hint {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 0.75rem;
+  padding: 8px 0;
+  text-align: center;
+}
+
+/* Nhà Cái PnL & Advice */
+.admin-pnl-card {
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.pnl-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: var(--gold-light);
+}
+
+.smart-advice-badge {
+  background: rgba(16, 185, 129, 0.15);
+  color: #6ee7b7;
+  border: 1px solid #10b981;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.pnl-stats-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  text-align: center;
+}
+
+.pnl-item {
+  background: rgba(255, 255, 255, 0.04);
+  padding: 8px 6px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.pnl-item strong {
+  font-size: 0.9rem;
+  font-weight: 900;
+}
+
+.pnl-interactive {
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+  user-select: none;
+}
+
+.pnl-interactive:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(245, 158, 11, 0.4);
+  transform: translateY(-2px);
+}
+
+.pnl-quick-action {
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: #fbbf24;
+  margin-top: 2px;
+  opacity: 0.8;
+}
+
+.pnl-interactive:hover .pnl-quick-action {
+  opacity: 1;
+  text-decoration: underline;
+}
+
+

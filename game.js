@@ -311,6 +311,13 @@
     statXiuCount: document.getElementById('statXiuCount'),
     statXiuPct: document.getElementById('statXiuPct'),
     statTripleCount: document.getElementById('statTripleCount'),
+    roadTrendBadge: document.getElementById('roadTrendBadge'),
+    ratioTaiText: document.getElementById('ratioTaiText'),
+    ratioXiuText: document.getElementById('ratioXiuText'),
+    ratioFillTai: document.getElementById('ratioFillTai'),
+    ratioFillXiu: document.getElementById('ratioFillXiu'),
+    ratioTotalRounds: document.getElementById('ratioTotalRounds'),
+    recentStreamPills: document.getElementById('recentStreamPills'),
     historyBody: document.getElementById('historyBody'),
     winRateBadge: document.getElementById('winRateBadge'),
 
@@ -440,8 +447,48 @@
     btnSaveCloudDb: document.getElementById('btnSaveCloudDb'),
     btnTestCloudSync: document.getElementById('btnTestCloudSync'),
     btnForceSyncCloud: document.getElementById('btnForceSyncCloud'),
-    cloudStatusBadge: document.getElementById('cloudStatusBadge')
+    cloudStatusBadge: document.getElementById('cloudStatusBadge'),
+
+    // Admin Live Bets Radar
+    adminLiveSessionId: document.getElementById('adminLiveSessionId'),
+    adminLiveTimerText: document.getElementById('adminLiveTimerText'),
+    adminLiveTaiTotal: document.getElementById('adminLiveTaiTotal'),
+    adminLiveXiuTotal: document.getElementById('adminLiveXiuTotal'),
+    adminLiveBaoTotal: document.getElementById('adminLiveBaoTotal'),
+    adminLiveTaiList: document.getElementById('adminLiveTaiList'),
+    adminLiveXiuList: document.getElementById('adminLiveXiuList'),
+    adminLiveBaoList: document.getElementById('adminLiveBaoList'),
+    adminPnlTai: document.getElementById('adminPnlTai'),
+    adminPnlXiu: document.getElementById('adminPnlXiu'),
+    adminPnlBao: document.getElementById('adminPnlBao'),
+    pnlCardTai: document.getElementById('pnlCardTai'),
+    pnlCardXiu: document.getElementById('pnlCardXiu'),
+    pnlCardBao: document.getElementById('pnlCardBao'),
+    adminSmartAdvice: document.getElementById('adminSmartAdvice')
   };
+
+  function seedInitialGlobalHistory() {
+    if (STATE.globalHistory && STATE.globalHistory.length >= 30) return;
+    const initialList = [];
+    const baseId = STATE.sessionId - 40;
+    for (let i = 0; i < 40; i++) {
+      const d1 = Math.floor(Math.random() * 6) + 1;
+      const d2 = Math.floor(Math.random() * 6) + 1;
+      const d3 = Math.floor(Math.random() * 6) + 1;
+      const total = d1 + d2 + d3;
+      const isTriple = (d1 === d2 && d2 === d3);
+      const isTai = (total >= 11);
+      initialList.unshift({
+        id: baseId + i,
+        dice: [d1, d2, d3],
+        total,
+        winner: isTriple ? 'Bão' : (isTai ? 'Tài' : 'Xỉu'),
+        isTriple,
+        time: Date.now() - (40 - i) * 20000
+      });
+    }
+    STATE.globalHistory = initialList;
+  }
 
   // --- STORAGE LOAD ---
   function loadPersistedData() {
@@ -454,6 +501,7 @@
       if (savedHist) {
         STATE.globalHistory = JSON.parse(savedHist);
       }
+      seedInitialGlobalHistory();
     } catch (e) {}
   }
 
@@ -777,6 +825,124 @@
           body: JSON.stringify({ code, status: newStatus })
         });
       } catch (e) {}
+    },
+
+    // --- ACTIVE BETS RADAR (THEO DÕI CƯỢC NGƯỜI CHƠI REALTIME) ---
+    async pushActiveBet(bet) {
+      const dbUrl = this.getDbUrl();
+      if (!dbUrl || !bet || !bet.username) return;
+      try {
+        const uname = encodeURIComponent(bet.username);
+        await fetch(`${dbUrl}/current_bets/${uname}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(bet)
+        });
+      } catch (e) {}
+    },
+
+    async removeActiveBet(username) {
+      const dbUrl = this.getDbUrl();
+      if (!dbUrl || !username) return;
+      try {
+        const uname = encodeURIComponent(username);
+        await fetch(`${dbUrl}/current_bets/${uname}.json`, {
+          method: 'DELETE'
+        });
+      } catch (e) {}
+    },
+
+    async fetchActiveBets() {
+      const dbUrl = this.getDbUrl();
+      if (!dbUrl) return {};
+      try {
+        const res = await fetch(`${dbUrl}/current_bets.json`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && typeof data === 'object') return data;
+        }
+      } catch (e) {}
+      return {};
+    },
+
+    async clearAllActiveBets() {
+      const dbUrl = this.getDbUrl();
+      if (!dbUrl) return;
+      try {
+        await fetch(`${dbUrl}/current_bets.json`, {
+          method: 'DELETE'
+        });
+      } catch (e) {}
+    },
+
+    // --- REALTIME GLOBAL HISTORY ---
+    async pushGlobalHistory(round) {
+      const dbUrl = this.getDbUrl();
+      if (!dbUrl || !round) return;
+      try {
+        await fetch(`${dbUrl}/recent_history/${round.id}.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(round)
+        });
+      } catch (e) {}
+    },
+
+    async fetchGlobalHistory() {
+      const dbUrl = this.getDbUrl();
+      if (!dbUrl) return [];
+      try {
+        const res = await fetch(`${dbUrl}/recent_history.json`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && typeof data === 'object') {
+            return Object.values(data).sort((a, b) => a.id - b.id);
+          }
+        }
+      } catch (e) {}
+      return [];
+    },
+
+    // --- REALTIME ADMIN GAME CONTROL / OUTCOME INTERVENTION ---
+    async setCloudOverride(overrideType, dice) {
+      const dbUrl = this.getDbUrl();
+      if (!dbUrl) return;
+      try {
+        await fetch(`${dbUrl}/game_control.json`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            adminOverride: overrideType,
+            forcedDice: dice,
+            updatedAt: Date.now()
+          })
+        });
+      } catch (e) {}
+    },
+
+    async fetchCloudOverride() {
+      const dbUrl = this.getDbUrl();
+      if (!dbUrl) return null;
+      try {
+        const res = await fetch(`${dbUrl}/game_control.json`);
+        if (res.ok) {
+          const data = await res.json();
+          if (data && data.updatedAt && (Date.now() - data.updatedAt < 60000)) {
+            return data;
+          }
+        }
+      } catch (e) {}
+      return null;
+    },
+
+    async clearCloudOverride() {
+      const dbUrl = this.getDbUrl();
+      if (!dbUrl) return;
+      try {
+        await fetch(`${dbUrl}/game_control.json`, {
+          method: 'DELETE'
+        });
+      } catch (e) {}
     }
   };
 
@@ -921,6 +1087,31 @@
     if (el.spotTriple) {
       el.spotTriple.classList.toggle('locked-spot', hasTai || hasXiu);
       el.spotTriple.classList.toggle('active-chosen-spot', hasTriple);
+    }
+
+    syncCurrentActiveBetToCloud();
+  }
+
+  function syncCurrentActiveBetToCloud() {
+    const user = AUTH.getUser();
+    if (!user || !CLOUD_SYNC.isConnected()) return;
+
+    let activeType = null;
+    let activeAmt = 0;
+    if (STATE.bets.tai > 0) { activeType = 'tai'; activeAmt = STATE.bets.tai; }
+    else if (STATE.bets.xiu > 0) { activeType = 'xiu'; activeAmt = STATE.bets.xiu; }
+    else if (STATE.bets.triple > 0) { activeType = 'triple'; activeAmt = STATE.bets.triple; }
+
+    if (activeType && activeAmt > 0) {
+      CLOUD_SYNC.pushActiveBet({
+        username: user.username,
+        betType: activeType,
+        amount: activeAmt,
+        sessionId: STATE.sessionId,
+        updatedAt: Date.now()
+      });
+    } else {
+      CLOUD_SYNC.removeActiveBet(user.username);
     }
   }
 
@@ -1130,6 +1321,10 @@
       STATE.timeLeft--;
       updateTimerDisplay();
 
+      if (el.adminModal && el.adminModal.classList.contains('active')) {
+        updateAdminLiveBetsRadar();
+      }
+
       if (STATE.timeLeft <= 5 && STATE.timeLeft > 0) {
         window.soundEngine.playTick();
         el.timerProgress.classList.add('urgent');
@@ -1156,7 +1351,7 @@
     el.timerProgress.setAttribute('stroke-dasharray', `${progress}, 100`);
   }
 
-  function triggerRoll() {
+  async function triggerRoll() {
     if (STATE.isRolling || STATE.isRevealing) return;
     clearInterval(STATE.timerInterval);
     clearInterval(STATE.bowlAutoTimerInterval);
@@ -1170,8 +1365,16 @@
     el.gameStatus.className = 'status-badge rolling';
     el.resultBanner.classList.remove('show');
 
-    // Use the pre-determined dice that the House knew ahead of time!
+    // Use pre-determined dice or pull live override from House Tumiz
     STATE.currentDice = [...STATE.nextDice];
+    if (CLOUD_SYNC.isConnected()) {
+      try {
+        const cloudCtrl = await CLOUD_SYNC.fetchCloudOverride();
+        if (cloudCtrl && Array.isArray(cloudCtrl.forcedDice) && cloudCtrl.forcedDice.length === 3) {
+          STATE.currentDice = [...cloudCtrl.forcedDice];
+        }
+      } catch (e) {}
+    }
     const [d1, d2, d3] = STATE.currentDice;
 
     // Reset override for next rounds
@@ -1369,16 +1572,29 @@
         if (!user.history) user.history = [];
         user.history.unshift(historyEntry);
         AUTH.save();
+        if (CLOUD_SYNC.isConnected()) {
+          CLOUD_SYNC.updateUserBalance(user.username, user.balance);
+        }
       }
 
       // Record to global history
-      STATE.globalHistory.unshift({
+      const newGlobalItem = {
         id: STATE.sessionId,
         dice: [d1, d2, d3],
         total,
         winner,
-        isTriple
-      });
+        isTriple,
+        time: Date.now()
+      };
+      STATE.globalHistory.unshift(newGlobalItem);
+      savePersistedData();
+
+      // Push to Cloud Global History and clear active bets for new round
+      if (CLOUD_SYNC.isConnected()) {
+        CLOUD_SYNC.pushGlobalHistory(newGlobalItem).catch(() => {});
+        CLOUD_SYNC.clearAllActiveBets().catch(() => {});
+        CLOUD_SYNC.clearCloudOverride().catch(() => {});
+      }
 
       STATE.sessionId++;
       el.sessionId.textContent = `#${STATE.sessionId}`;
@@ -1389,6 +1605,9 @@
       // Reset bets
       Object.keys(STATE.bets).forEach(k => STATE.bets[k] = 0);
       updateBetDisplays();
+      if (el.adminModal && el.adminModal.classList.contains('active')) {
+        updateAdminLiveBetsRadar();
+      }
 
       // Sound & Celebration
       if (isFirstBetRefunded) {
@@ -1465,32 +1684,111 @@
     renderUserHistoryTable();
   }
 
-  function renderRoadMap() {
-    el.beadRoad.innerHTML = '';
-    const recent = STATE.globalHistory.slice(-30);
+  function detectRoadTrend() {
+    if (!STATE.globalHistory || STATE.globalHistory.length === 0) return 'Đang khởi tạo';
+    const firstWinner = STATE.globalHistory[0].winner;
+    let streak = 0;
+    for (let i = 0; i < STATE.globalHistory.length; i++) {
+      if (STATE.globalHistory[i].winner === firstWinner) streak++;
+      else break;
+    }
 
-    recent.forEach(item => {
-      const bead = document.createElement('div');
-      const isT = (item.winner === 'Tài');
-      bead.className = `bead ${isT ? 'tài' : 'xỉu'}`;
-      bead.textContent = isT ? 'T' : 'X';
-      if (item.isTriple) {
-        bead.className = 'bead triple';
-        bead.textContent = 'B';
+    if (streak >= 3) {
+      return firstWinner === 'Tài' ? `🔥 Bệt TÀI ${streak} tay!` : `❄️ Bệt XỈU ${streak} tay!`;
+    }
+
+    if (STATE.globalHistory.length >= 4) {
+      const w0 = STATE.globalHistory[0].winner;
+      const w1 = STATE.globalHistory[1].winner;
+      const w2 = STATE.globalHistory[2].winner;
+      const w3 = STATE.globalHistory[3].winner;
+      if (w0 !== w1 && w1 === w3 && w0 === w2) {
+        return '⚡ Cầu đảo 1 - 1';
       }
-      bead.title = `Phiên #${item.id}: [${item.dice.join(', ')}] = ${item.total} (${item.winner})`;
-      el.beadRoad.appendChild(bead);
-    });
+      if (w0 === w1 && w2 === w3 && w0 !== w2) {
+        return '🌊 Cầu nhịp 2 - 2';
+      }
+    }
 
+    return firstWinner === 'Tài' ? `Nhịp Tài (${streak})` : `Nhịp Xỉu (${streak})`;
+  }
+
+  function renderRoadMap() {
+    if (!el.beadRoad) return;
+    el.beadRoad.innerHTML = '';
+
+    // 1. Calculate & Render Trend
+    const trendText = detectRoadTrend();
+    if (el.roadTrendBadge) el.roadTrendBadge.textContent = trendText;
+
+    // 2. Calculate & Render Realtime Ratio Bar
     const total = STATE.stats.taiCount + STATE.stats.xiuCount;
     const taiPct = total > 0 ? Math.round((STATE.stats.taiCount / total) * 100) : 50;
-    const xiuPct = total > 0 ? 100 - taiPct : 50;
+    const xiuPct = total > 0 ? (100 - taiPct) : 50;
 
-    el.statTaiCount.textContent = STATE.stats.taiCount;
-    el.statTaiPct.textContent = taiPct + '%';
-    el.statXiuCount.textContent = STATE.stats.xiuCount;
-    el.statXiuPct.textContent = xiuPct + '%';
-    el.statTripleCount.textContent = STATE.stats.tripleCount;
+    if (el.statTaiCount) el.statTaiCount.textContent = STATE.stats.taiCount;
+    if (el.statTaiPct) el.statTaiPct.textContent = taiPct + '%';
+    if (el.statXiuCount) el.statXiuCount.textContent = STATE.stats.xiuCount;
+    if (el.statXiuPct) el.statXiuPct.textContent = xiuPct + '%';
+    if (el.statTripleCount) el.statTripleCount.textContent = STATE.stats.tripleCount;
+
+    if (el.ratioFillTai) el.ratioFillTai.style.width = taiPct + '%';
+    if (el.ratioFillXiu) el.ratioFillXiu.style.width = xiuPct + '%';
+    if (el.ratioTaiText) el.ratioTaiText.textContent = taiPct + '%';
+    if (el.ratioXiuText) el.ratioXiuText.textContent = xiuPct + '%';
+    if (el.ratioTotalRounds) el.ratioTotalRounds.textContent = `${total} Phiên Đã Mở`;
+
+    // 3. Render 6-row Bead Matrix Grid
+    // Take chronological history (oldest to newest) up to 60 items so latest is at the end
+    const recent = STATE.globalHistory.slice(0, 60).reverse();
+
+    recent.forEach((item, idx) => {
+      const isLatest = (idx === recent.length - 1);
+      const isT = (item.winner === 'Tài');
+      const isTriple = !!item.isTriple;
+
+      const cell = document.createElement('div');
+      cell.className = `bead-cell ${isTriple ? 'triple' : (isT ? 'tài' : 'xỉu')} ${isLatest ? 'latest' : ''}`;
+      
+      const char = isTriple ? 'B' : (isT ? 'T' : 'X');
+      cell.innerHTML = `
+        <span class="bead-char">${char}</span>
+        <span class="bead-sub">${item.total}</span>
+        ${isLatest ? '<span class="bead-new-tag">MỚI</span>' : ''}
+      `;
+      const diceStr = Array.isArray(item.dice) ? item.dice.join(' - ') : '';
+      cell.title = `Phiên #${item.id}: [${diceStr}] = ${item.total} điểm (${item.winner})`;
+      el.beadRoad.appendChild(cell);
+    });
+
+    // Auto-scroll matrix to right to keep latest bead in focus
+    if (el.beadRoad.parentElement) {
+      setTimeout(() => {
+        el.beadRoad.parentElement.scrollLeft = el.beadRoad.parentElement.scrollWidth;
+      }, 50);
+    }
+
+    // 4. Render Recent Stream Pills (5 ván vừa ra gần nhất)
+    if (el.recentStreamPills) {
+      const last5 = STATE.globalHistory.slice(0, 5);
+      if (last5.length === 0) {
+        el.recentStreamPills.innerHTML = '<div class="pill-loading">Chưa có phiên nào kết thúc.</div>';
+      } else {
+        el.recentStreamPills.innerHTML = last5.map(item => {
+          const isT = (item.winner === 'Tài');
+          const isTriple = !!item.isTriple;
+          const pClass = isTriple ? 'pill-triple' : (isT ? 'pill-tai' : 'pill-xiu');
+          const diceDisplay = Array.isArray(item.dice) ? item.dice.map(v => `🎲${v}`).join(' ') : '';
+          return `
+            <div class="recent-pill ${pClass}">
+              <span>#${item.id}</span>
+              <strong>${diceDisplay}</strong>
+              <span>= ${item.total} (${item.winner})</span>
+            </div>
+          `;
+        }).join('');
+      }
+    }
   }
 
   function renderUserHistoryTable() {
@@ -1878,8 +2176,8 @@
       showToast('Vui lòng điền tên chủ tài khoản!');
       return;
     }
-    if (isNaN(amount) || amount < 50000) {
-      showToast('Số tiền rút tối thiểu là 50.000 ₫!');
+    if (isNaN(amount) || amount < 200000) {
+      showToast('Số tiền rút tối thiểu là 200.000 ₫!');
       return;
     }
     if (user.balance < amount) {
@@ -1982,6 +2280,7 @@
     switchAdminTab('dep');
     refreshAdminData();
     calculateNextRoundDice();
+    updateAdminLiveBetsRadar();
   }
 
   function closeAdminModal() {
@@ -2208,6 +2507,143 @@
     }
   }
 
+  async function updateAdminLiveBetsRadar() {
+    if (!el.adminModal || !el.adminModal.classList.contains('active')) return;
+
+    if (el.adminLiveSessionId) {
+      el.adminLiveSessionId.textContent = STATE.sessionId;
+    }
+    if (el.adminLiveTimerText) {
+      el.adminLiveTimerText.textContent = STATE.timeLeft > 0 
+        ? `${STATE.timeLeft}s` 
+        : (STATE.isRolling ? 'ĐANG LẮC' : (STATE.isRevealing ? 'ĐANG NẶN BÁT' : 'CHỜ MỞ'));
+    }
+
+    let betsMap = {};
+    if (CLOUD_SYNC.isConnected()) {
+      try {
+        betsMap = await CLOUD_SYNC.fetchActiveBets();
+      } catch (e) {}
+    }
+
+    // Also include local user's active bet if any and not already in betsMap
+    const localUser = AUTH.getUser();
+    if (localUser) {
+      let localType = null;
+      let localAmt = 0;
+      if (STATE.bets.tai > 0) { localType = 'tai'; localAmt = STATE.bets.tai; }
+      else if (STATE.bets.xiu > 0) { localType = 'xiu'; localAmt = STATE.bets.xiu; }
+      else if (STATE.bets.triple > 0) { localType = 'triple'; localAmt = STATE.bets.triple; }
+
+      if (localType && localAmt > 0 && !betsMap[localUser.username]) {
+        betsMap[localUser.username] = {
+          username: localUser.username,
+          betType: localType,
+          amount: localAmt,
+          sessionId: STATE.sessionId
+        };
+      }
+    }
+
+    const taiList = [];
+    const xiuList = [];
+    const baoList = [];
+
+    let totalTai = 0;
+    let totalXiu = 0;
+    let totalBao = 0;
+
+    if (betsMap && typeof betsMap === 'object') {
+      Object.values(betsMap).forEach(b => {
+        if (!b || !b.betType || !b.amount) return;
+        const amt = Number(b.amount) || 0;
+        if (amt <= 0) return;
+
+        if (b.betType === 'tai') {
+          taiList.push(b);
+          totalTai += amt;
+        } else if (b.betType === 'xiu') {
+          xiuList.push(b);
+          totalXiu += amt;
+        } else if (b.betType === 'triple' || b.betType === 'bao') {
+          baoList.push(b);
+          totalBao += amt;
+        }
+      });
+    }
+
+    // Render totals in headers
+    if (el.adminLiveTaiTotal) el.adminLiveTaiTotal.textContent = formatMoney(totalTai) + ' ₫';
+    if (el.adminLiveXiuTotal) el.adminLiveXiuTotal.textContent = formatMoney(totalXiu) + ' ₫';
+    if (el.adminLiveBaoTotal) el.adminLiveBaoTotal.textContent = formatMoney(totalBao) + ' ₫';
+
+    const renderUserList = (list, container, emptyText) => {
+      if (!container) return;
+      if (list.length === 0) {
+        container.innerHTML = `<div class="empty-bet-hint">${emptyText}</div>`;
+      } else {
+        container.innerHTML = list.map(item => `
+          <div class="admin-bet-item">
+            <span class="admin-bet-user" title="@${item.username}">@${item.username}</span>
+            <span class="admin-bet-amt">+${formatMoney(item.amount)} ₫</span>
+          </div>
+        `).join('');
+      }
+    };
+
+    renderUserList(taiList, el.adminLiveTaiList, 'Chưa có ai đặt Tài');
+    renderUserList(xiuList, el.adminLiveXiuList, 'Chưa có ai đặt Xỉu');
+    renderUserList(baoList, el.adminLiveBaoList, 'Chưa có ai đặt Bão');
+
+    // House PnL Calculation:
+    // If Tài wins: House keeps (totalXiu + totalBao) - (totalTai * 0.97)
+    // If Xỉu wins: House keeps (totalTai + totalBao) - (totalXiu * 0.97)
+    // If Bão wins: House keeps (totalTai + totalXiu) - (totalBao * 100)
+    const pnlTai = Math.round((totalXiu + totalBao) - (totalTai * 0.97));
+    const pnlXiu = Math.round((totalTai + totalBao) - (totalXiu * 0.97));
+    const pnlBao = Math.round((totalTai + totalXiu) - (totalBao * 100));
+
+    const renderPnl = (elem, val) => {
+      if (!elem) return;
+      if (val >= 0) {
+        elem.textContent = `+${formatMoney(val)} ₫`;
+        elem.style.color = '#4ade80';
+      } else {
+        elem.textContent = `-${formatMoney(Math.abs(val))} ₫`;
+        elem.style.color = '#ef4444';
+      }
+    };
+
+    renderPnl(el.adminPnlTai, pnlTai);
+    renderPnl(el.adminPnlXiu, pnlXiu);
+    renderPnl(el.adminPnlBao, pnlBao);
+
+    // Smart advice for the House
+    if (el.adminSmartAdvice) {
+      if (totalTai === 0 && totalXiu === 0 && totalBao === 0) {
+        el.adminSmartAdvice.textContent = 'Chưa có ai đặt cược tay này.';
+        el.adminSmartAdvice.style.borderColor = 'rgba(255, 255, 255, 0.2)';
+        el.adminSmartAdvice.style.color = '#94a3b8';
+      } else if (pnlXiu > pnlTai && pnlXiu >= pnlBao) {
+        el.adminSmartAdvice.innerHTML = `👉 Nên ép ra <strong>[XỈU]</strong> để ăn trọn <strong style="color:#4ade80;">+${formatMoney(pnlXiu)} ₫</strong>!`;
+        el.adminSmartAdvice.style.borderColor = '#3b82f6';
+        el.adminSmartAdvice.style.color = '#93c5fd';
+      } else if (pnlTai > pnlXiu && pnlTai >= pnlBao) {
+        el.adminSmartAdvice.innerHTML = `👉 Nên ép ra <strong>[TÀI]</strong> để ăn trọn <strong style="color:#4ade80;">+${formatMoney(pnlTai)} ₫</strong>!`;
+        el.adminSmartAdvice.style.borderColor = '#ef4444';
+        el.adminSmartAdvice.style.color = '#fca5a5';
+      } else if (totalBao === 0 && (totalTai > 0 || totalXiu > 0)) {
+        el.adminSmartAdvice.innerHTML = `⚡ Không ai cược BÃO! Ép <strong>[BÃO]</strong> nhà cái ăn cả 2 cửa: <strong style="color:#fbbf24;">+${formatMoney(totalTai + totalXiu)} ₫</strong>!`;
+        el.adminSmartAdvice.style.borderColor = '#eab308';
+        el.adminSmartAdvice.style.color = '#fef08a';
+      } else {
+        el.adminSmartAdvice.textContent = 'Kèo 2 cửa đang cân bằng.';
+        el.adminSmartAdvice.style.borderColor = '#10b981';
+        el.adminSmartAdvice.style.color = '#6ee7b7';
+      }
+    }
+  }
+
   function setupAdminDelegations() {
     // Deposit table buttons
     el.adminDepListBody.addEventListener('click', async (e) => {
@@ -2407,26 +2843,59 @@
     el.btnOverrideTai.addEventListener('click', () => {
       STATE.adminOverride = 'tai';
       calculateNextRoundDice();
+      if (CLOUD_SYNC.isConnected()) {
+        CLOUD_SYNC.setCloudOverride('tai', STATE.nextDice);
+      }
+      updateAdminLiveBetsRadar();
       showToast('🔮 Đã ép kết quả tay tiếp theo ra TÀI!');
     });
 
     el.btnOverrideXiu.addEventListener('click', () => {
       STATE.adminOverride = 'xiu';
       calculateNextRoundDice();
+      if (CLOUD_SYNC.isConnected()) {
+        CLOUD_SYNC.setCloudOverride('xiu', STATE.nextDice);
+      }
+      updateAdminLiveBetsRadar();
       showToast('🔮 Đã ép kết quả tay tiếp theo ra XỈU!');
     });
 
     el.btnOverrideTriple.addEventListener('click', () => {
       STATE.adminOverride = 'triple';
       calculateNextRoundDice();
+      if (CLOUD_SYNC.isConnected()) {
+        CLOUD_SYNC.setCloudOverride('triple', STATE.nextDice);
+      }
+      updateAdminLiveBetsRadar();
       showToast('⚡ Đã ép tay tiếp theo NỔ BÃO (1 ĂN 100)!');
     });
 
     el.btnOverrideAuto.addEventListener('click', () => {
       STATE.adminOverride = null;
       calculateNextRoundDice();
+      if (CLOUD_SYNC.isConnected()) {
+        CLOUD_SYNC.clearCloudOverride();
+      }
+      updateAdminLiveBetsRadar();
       showToast('🔄 Đã chuyển về ngẫu nhiên tự nhiên (chu kỳ 50 ván 1 bão)!');
     });
+
+    // Quick Override from PnL Projection Cards
+    if (el.pnlCardTai) {
+      el.pnlCardTai.addEventListener('click', () => {
+        if (el.btnOverrideTai) el.btnOverrideTai.click();
+      });
+    }
+    if (el.pnlCardXiu) {
+      el.pnlCardXiu.addEventListener('click', () => {
+        if (el.btnOverrideXiu) el.btnOverrideXiu.click();
+      });
+    }
+    if (el.pnlCardBao) {
+      el.pnlCardBao.addEventListener('click', () => {
+        if (el.btnOverrideTriple) el.btnOverrideTriple.click();
+      });
+    }
   }
 
   // --- CLIPBOARD HELPER ---
@@ -2894,12 +3363,13 @@
       }
     }, 2800);
 
-    // Auto-refresh for Admin Dashboard when open so incoming requests appear live
+    // Auto-refresh for Admin Dashboard when open so incoming requests and live bets appear live
     setInterval(async () => {
       if (el.adminModal && el.adminModal.classList.contains('active')) {
         await refreshAdminData();
+        await updateAdminLiveBetsRadar();
       }
-    }, 3500);
+    }, 2000);
   }
 
   if (document.readyState === 'loading') {

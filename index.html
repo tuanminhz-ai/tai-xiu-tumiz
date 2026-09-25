@@ -302,23 +302,50 @@
         </div>
       </div>
 
-      <!-- Bảng Soi Cầu (Lịch Sử Xúc Xắc Chấm Đỏ / Chấm Xanh) -->
+      <!-- Bảng Soi Cầu Realtime VIP (Chuẩn Casino Quốc Tế) -->
       <section class="road-map-section">
         <div class="road-header">
           <div class="road-title">
-            <span>📊 BẢNG SOI CẦU TÀI XỈU</span>
-            <small>50 Phiên Gần Nhất</small>
+            <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+              <span>📊 BẢNG SOI CẦU TÀI XỈU REALTIME</span>
+              <span class="live-pulse-badge">🔴 LIVE SÁT GIÂY</span>
+            </div>
+            <div class="road-subtitle">
+              <span id="roadTrendBadge" class="trend-badge">🔥 Cầu: Đang bắt nhịp...</span>
+              <small>Lịch sử 50 phiên gần nhất</small>
+            </div>
           </div>
           <div class="road-stats">
-            <span class="stat-tag stat-tai">Tài: <strong id="statTaiCount">0</strong> (<span id="statTaiPct">50%</span>)</span>
-            <span class="stat-tag stat-xiu">Xỉu: <strong id="statXiuCount">0</strong> (<span id="statXiuPct">50%</span>)</span>
-            <span class="stat-tag stat-triple">Bão: <strong id="statTripleCount">0</strong></span>
+            <span class="stat-tag stat-tai">🔴 Tài: <strong id="statTaiCount">0</strong> (<span id="statTaiPct">50%</span>)</span>
+            <span class="stat-tag stat-xiu">🔵 Xỉu: <strong id="statXiuCount">0</strong> (<span id="statXiuPct">50%</span>)</span>
+            <span class="stat-tag stat-triple">🟡 Bão: <strong id="statTripleCount">0</strong></span>
           </div>
         </div>
 
-        <!-- Dãy chấm cầu tròn (Bead Plate) -->
-        <div class="bead-road-wrap">
-          <div class="bead-road" id="beadRoad"></div>
+        <!-- Thanh tỷ lệ % đồ họa Tài vs Xỉu thời gian thực -->
+        <div class="ratio-bar-wrap">
+          <div class="ratio-labels">
+            <span class="lbl-tai">🔴 TÀI: <strong id="ratioTaiText">50%</strong></span>
+            <span class="lbl-center" id="ratioTotalRounds">50 Phiên</span>
+            <span class="lbl-xiu"><strong id="ratioXiuText">50%</strong> :XỈU 🔵</span>
+          </div>
+          <div class="ratio-bar">
+            <div class="ratio-fill-tai" id="ratioFillTai" style="width: 50%;"></div>
+            <div class="ratio-fill-xiu" id="ratioFillXiu" style="width: 50%;"></div>
+          </div>
+        </div>
+
+        <!-- Ma trận Cầu Giọt Nước 6 Hàng (Bead Plate Matrix) -->
+        <div class="bead-matrix-container">
+          <div class="bead-matrix-grid" id="beadRoad"></div>
+        </div>
+
+        <!-- Dòng 5 Phiên Vừa Mở Gần Nhất -->
+        <div class="recent-stream-bar">
+          <span class="stream-label">⚡ VỪA RA:</span>
+          <div class="recent-stream-pills" id="recentStreamPills">
+            <div class="pill-loading">Đang tải kết quả gần nhất...</div>
+          </div>
         </div>
       </section>
 
@@ -760,24 +787,24 @@
             </div>
 
             <div class="form-group">
-              <label for="withdrawAmount">Số Tiền Muốn Rút (₫):</label>
+              <label for="withdrawAmount">Số Tiền Muốn Rút (₫) - Tối thiểu 200.000 ₫:</label>
               <div class="custom-input-box">
-                <input type="number" id="withdrawAmount" min="50000" step="10000" placeholder="Tối thiểu 50.000 ₫" required>
+                <input type="number" id="withdrawAmount" min="200000" step="10000" placeholder="Tối thiểu 200.000 ₫" required>
                 <span class="custom-suffix">VND</span>
               </div>
             </div>
 
             <div class="quick-withdraw-btns">
-              <button type="button" class="btn-quick-withdraw" data-amt="100000">100K</button>
               <button type="button" class="btn-quick-withdraw" data-amt="200000">200K</button>
               <button type="button" class="btn-quick-withdraw" data-amt="500000">500K</button>
               <button type="button" class="btn-quick-withdraw" data-amt="1000000">1M</button>
+              <button type="button" class="btn-quick-withdraw" data-amt="2000000">2M</button>
               <button type="button" class="btn-quick-withdraw" data-amt="5000000">5M</button>
               <button type="button" class="btn-quick-withdraw" id="btnWithdrawAll">TẤT CẢ</button>
             </div>
 
             <div class="withdraw-note">
-              📌 Lệnh rút tiền sẽ được gửi trực tiếp đến <strong>Admin Nhà Cái Tumiz</strong> để chuyển khoản thẳng vào số tài khoản của bạn.
+              📌 Số tiền rút tối thiểu: <strong>200.000 ₫</strong>. Lệnh rút tiền sẽ được gửi trực tiếp đến <strong>Admin Nhà Cái Tumiz</strong> để chuyển khoản thẳng vào tài khoản của bạn.
             </div>
 
             <button type="submit" class="btn-primary-modal btn-submit-withdraw">
@@ -868,6 +895,78 @@
                 <button type="button" class="btn-override btn-ovr-xiu" id="btnOverrideXiu">⚡ ÉP RA XỈU</button>
                 <button type="button" class="btn-override btn-ovr-triple" id="btnOverrideTriple">⚡ CHO NỔ BÃO NGAY</button>
                 <button type="button" class="btn-override btn-ovr-auto active" id="btnOverrideAuto">🔄 ĐỂ TỰ NHIÊN</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Radar Soi Kèo Người Chơi Đặt Cược (Realtime Live Bets & Profit Engine) -->
+        <div class="admin-live-bets-card">
+          <div class="pred-header">
+            <span class="pred-tag" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5; border-color: #ef4444;">
+              📡 RADAR SOI KÈO NGƯỜI CHƠI (TAY NÀY AI ĐANG ĐẶT CỬA NÀO?)
+            </span>
+            <span class="pred-cycle" id="adminBetSessionInfo">
+              Phiên #<span id="adminLiveSessionId">882910</span> • Đếm ngược: <strong id="adminLiveTimerText" style="color:#fbbf24;">15s</strong>
+            </span>
+          </div>
+
+          <div class="admin-bets-grid">
+            <!-- Cửa TÀI -->
+            <div class="admin-bet-col col-tai">
+              <div class="admin-bet-col-header">
+                <span class="col-title">🔴 CỬA TÀI</span>
+                <span class="col-total" id="adminLiveTaiTotal">0 ₫</span>
+              </div>
+              <div class="admin-bet-users-list" id="adminLiveTaiList">
+                <div class="empty-bet-hint">Chưa có ai đặt Tài</div>
+              </div>
+            </div>
+
+            <!-- Cửa XỈU -->
+            <div class="admin-bet-col col-xiu">
+              <div class="admin-bet-col-header">
+                <span class="col-title">🔵 CỬA XỈU</span>
+                <span class="col-total" id="adminLiveXiuTotal">0 ₫</span>
+              </div>
+              <div class="admin-bet-users-list" id="adminLiveXiuList">
+                <div class="empty-bet-hint">Chưa có ai đặt Xỉu</div>
+              </div>
+            </div>
+
+            <!-- Cửa BÃO -->
+            <div class="admin-bet-col col-bao">
+              <div class="admin-bet-col-header">
+                <span class="col-title">🟡 CỬA BÃO</span>
+                <span class="col-total" id="adminLiveBaoTotal">0 ₫</span>
+              </div>
+              <div class="admin-bet-users-list" id="adminLiveBaoList">
+                <div class="empty-bet-hint">Chưa có ai đặt Bão</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Nhà Cái Dự Báo Lãi / Lỗ & Gợi Ý Can Thiệp -->
+          <div class="admin-pnl-card">
+            <div class="pnl-header">
+              <span>💡 DỰ BÁO LÃI / LỖ NHÀ CÁI KHI MỞ BÁT TAY NÀY:</span>
+              <span id="adminSmartAdvice" class="smart-advice-badge">Đang phân tích kèo người chơi...</span>
+            </div>
+            <div class="pnl-stats-row">
+              <div class="pnl-item pnl-interactive" id="pnlCardTai" title="Bấm để ép kết quả ra TÀI ngay!">
+                <span>Nếu ra TÀI:</span>
+                <strong id="adminPnlTai" class="win-text">+0 ₫</strong>
+                <span class="pnl-quick-action">⚡ Bấm Ép Tài</span>
+              </div>
+              <div class="pnl-item pnl-interactive" id="pnlCardXiu" title="Bấm để ép kết quả ra XỈU ngay!">
+                <span>Nếu ra XỈU:</span>
+                <strong id="adminPnlXiu" class="win-text">+0 ₫</strong>
+                <span class="pnl-quick-action">⚡ Bấm Ép Xỉu</span>
+              </div>
+              <div class="pnl-item pnl-interactive" id="pnlCardBao" title="Bấm để ép kết quả NỔ BÃO ngay!">
+                <span>Nếu ra BÃO:</span>
+                <strong id="adminPnlBao" class="win-text">+0 ₫</strong>
+                <span class="pnl-quick-action">⚡ Bấm Nổ Bão</span>
               </div>
             </div>
           </div>
