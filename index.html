@@ -877,6 +877,7 @@
         <div class="admin-tabs">
           <button class="admin-tab active" id="tabBtnAdminDep">📥 Duyệt Nạp (<span id="badgePendingDep">0</span>)</button>
           <button class="admin-tab" id="tabBtnAdminWithdraw">📤 Duyệt Rút (<span id="badgePendingWithdraw">0</span>)</button>
+          <button class="admin-tab" id="tabBtnAdminUsers">👥 Quản Lý Thành Viên (<span id="badgeTotalUsers">0</span>)</button>
           <button class="admin-tab" id="tabBtnAdminInflate">⚖️ Bơm / Hút Tiền</button>
           <button class="admin-tab" id="tabBtnAdminSecurity">🔐 Đổi Mật Khẩu</button>
           <button class="admin-tab" id="tabBtnAdminCloud">🌐 Kết Nối Đám Mây</button>
@@ -931,6 +932,33 @@
               <tbody id="adminWithdrawListBody">
                 <tr class="empty-row">
                   <td colspan="7">Không có yêu cầu rút tiền nào đang chờ xử lý.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Tab: Quản Lý Thành Viên Toàn Hệ Thống -->
+        <div class="admin-tab-content hidden" id="adminContentUsers">
+          <div class="admin-panel-title">
+            <span>Danh sách tất cả người chơi đăng ký từ mọi thiết bị (Đồng bộ Realtime):</span>
+            <button class="btn-refresh-admin" id="btnRefreshUsers">🔄 Làm mới</button>
+          </div>
+          <div class="admin-table-wrap">
+            <table class="history-table admin-table">
+              <thead>
+                <tr>
+                  <th>Tài Khoản</th>
+                  <th>Số Dư</th>
+                  <th>Cấp VIP</th>
+                  <th>Lệnh Nạp</th>
+                  <th>Lệnh Rút</th>
+                  <th>Hành Động Nhanh</th>
+                </tr>
+              </thead>
+              <tbody id="adminUserListBody">
+                <tr class="empty-row">
+                  <td colspan="6">Đang tải danh sách người chơi...</td>
                 </tr>
               </tbody>
             </table>
@@ -1031,6 +1059,7 @@
 
   </div>
 
+  <script src="config.js"></script>
   <script src="audio.js"></script>
   <script src="game.js"></script>
 </body>
