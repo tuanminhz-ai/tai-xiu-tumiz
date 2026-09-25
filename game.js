@@ -158,6 +158,7 @@
     timeLeft: 15,
     timerInterval: null,
     bowlAutoTimerInterval: null,
+    nextRoundTimerInterval: null,
     revealTimeLeft: 10,
     isRolling: false,
     isRevealing: false,
@@ -648,6 +649,15 @@
   function startSessionTimer() {
     clearInterval(STATE.timerInterval);
     clearInterval(STATE.bowlAutoTimerInterval);
+    if (STATE.nextRoundTimerInterval) {
+      clearInterval(STATE.nextRoundTimerInterval);
+      STATE.nextRoundTimerInterval = null;
+    }
+    STATE.isRolling = false;
+    STATE.isRevealing = false;
+    isDraggingBowl = false;
+    currentX = 0;
+    currentY = 0;
     STATE.timeLeft = 15;
     el.timerLabel.textContent = 'ĐẶT CƯỢC';
     el.gameStatus.textContent = 'Nhà Cái Tumiz đang nhận cược...';
@@ -825,168 +835,179 @@
     let totalBet = 0;
     let netWin = 0;
     const betItems = [];
+    let isFirstBetRefunded = false;
+    let refundedAmount = 0;
 
-    if (user) {
-      // Cược TÀI (1:1.97)
-      if (STATE.bets.tai > 0) {
-        totalBet += STATE.bets.tai;
-        betItems.push(`Tài: ${formatMoney(STATE.bets.tai)} ₫`);
-        if (isTai) {
-          const payout = Math.floor(STATE.bets.tai * 1.97);
-          netWin += Math.floor(STATE.bets.tai * 0.97);
-          user.balance += payout;
-        } else {
-          netWin -= STATE.bets.tai;
-        }
-      }
-
-      // Cược XỈU (1:1.97)
-      if (STATE.bets.xiu > 0) {
-        totalBet += STATE.bets.xiu;
-        betItems.push(`Xỉu: ${formatMoney(STATE.bets.xiu)} ₫`);
-        if (!isTai) {
-          const payout = Math.floor(STATE.bets.xiu * 1.97);
-          netWin += Math.floor(STATE.bets.xiu * 0.97);
-          user.balance += payout;
-        } else {
-          netWin -= STATE.bets.xiu;
-        }
-      }
-
-      // Cược BÃO (1:100)
-      if (STATE.bets.triple > 0) {
-        totalBet += STATE.bets.triple;
-        betItems.push(`Bão: ${formatMoney(STATE.bets.triple)} ₫`);
-        if (isTriple) {
-          const tripleWin = STATE.bets.triple * 100;
-          netWin += tripleWin;
-          user.balance += STATE.bets.triple + tripleWin;
-        } else {
-          netWin -= STATE.bets.triple;
-        }
-      }
-
-      // Cược CHẴN / LẺ (1:1.95)
-      if (STATE.bets.even > 0) {
-        totalBet += STATE.bets.even;
-        betItems.push(`Chẵn: ${formatMoney(STATE.bets.even)} ₫`);
-        if (isEven) {
-          const winAmt = Math.floor(STATE.bets.even * 1.95);
-          netWin += Math.floor(STATE.bets.even * 0.95);
-          user.balance += winAmt;
-        } else {
-          netWin -= STATE.bets.even;
-        }
-      }
-
-      if (STATE.bets.odd > 0) {
-        totalBet += STATE.bets.odd;
-        betItems.push(`Lẻ: ${formatMoney(STATE.bets.odd)} ₫`);
-        if (!isEven) {
-          const winAmt = Math.floor(STATE.bets.odd * 1.95);
-          netWin += Math.floor(STATE.bets.odd * 0.95);
-          user.balance += winAmt;
-        } else {
-          netWin -= STATE.bets.odd;
-        }
-      }
-
-      // Check First Bet 100% Refund Promotion:
-      // RULE: "hoàn tiền vé cược đầu khi đánh trên 10k, ví dụ đánh 20k thua thì vẫn sẽ được hoàn lại tiền sau đó thì mọi thứ như bình thường"
-      let isFirstBetRefunded = false;
-      let refundedAmount = 0;
-
-      if (user.firstBetRefundEligible && totalBet >= 10000) {
-        if (netWin < 0) {
-          // Player lost their qualifying first bet >= 10.000 ₫ -> 100% REFUND!
-          refundedAmount = Math.abs(netWin);
-          user.balance += refundedAmount;
-          netWin = 0; // Neutralized to 0 because money was refunded
-          isFirstBetRefunded = true;
-
-          // Record refund into deposit transaction list
-          if (!user.deposits) user.deposits = [];
-          user.deposits.unshift({
-            code: 'BẢO HIỂM HOÀN CƯỢC',
-            amount: refundedAmount,
-            bank: 'BẢO HIỂM TÂN THỦ 10K+',
-            stk: `PHIÊN #${STATE.sessionId}`,
-            time: new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN'),
-            status: 'Thành Công'
-          });
+    try {
+      if (user) {
+        // Cược TÀI (1:1.97)
+        if (STATE.bets.tai > 0) {
+          totalBet += STATE.bets.tai;
+          betItems.push(`Tài: ${formatMoney(STATE.bets.tai)} ₫`);
+          if (isTai) {
+            const payout = Math.floor(STATE.bets.tai * 1.97);
+            netWin += Math.floor(STATE.bets.tai * 0.97);
+            user.balance += payout;
+          } else {
+            netWin -= STATE.bets.tai;
+          }
         }
 
-        // Promo is consumed after first qualifying bet >= 10k
-        user.firstBetRefundEligible = false;
-        user.hasUsedFirstBetRefund = true;
+        // Cược XỈU (1:1.97)
+        if (STATE.bets.xiu > 0) {
+          totalBet += STATE.bets.xiu;
+          betItems.push(`Xỉu: ${formatMoney(STATE.bets.xiu)} ₫`);
+          if (!isTai) {
+            const payout = Math.floor(STATE.bets.xiu * 1.97);
+            netWin += Math.floor(STATE.bets.xiu * 0.97);
+            user.balance += payout;
+          } else {
+            netWin -= STATE.bets.xiu;
+          }
+        }
+
+        // Cược BÃO (1:100)
+        if (STATE.bets.triple > 0) {
+          totalBet += STATE.bets.triple;
+          betItems.push(`Bão: ${formatMoney(STATE.bets.triple)} ₫`);
+          if (isTriple) {
+            const tripleWin = STATE.bets.triple * 100;
+            netWin += tripleWin;
+            user.balance += STATE.bets.triple + tripleWin;
+          } else {
+            netWin -= STATE.bets.triple;
+          }
+        }
+
+        // Cược CHẴN / LẺ (1:1.95)
+        if (STATE.bets.even > 0) {
+          totalBet += STATE.bets.even;
+          betItems.push(`Chẵn: ${formatMoney(STATE.bets.even)} ₫`);
+          if (isEven) {
+            const winAmt = Math.floor(STATE.bets.even * 1.95);
+            netWin += Math.floor(STATE.bets.even * 0.95);
+            user.balance += winAmt;
+          } else {
+            netWin -= STATE.bets.even;
+          }
+        }
+
+        if (STATE.bets.odd > 0) {
+          totalBet += STATE.bets.odd;
+          betItems.push(`Lẻ: ${formatMoney(STATE.bets.odd)} ₫`);
+          if (!isEven) {
+            const winAmt = Math.floor(STATE.bets.odd * 1.95);
+            netWin += Math.floor(STATE.bets.odd * 0.95);
+            user.balance += winAmt;
+          } else {
+            netWin -= STATE.bets.odd;
+          }
+        }
+
+        // Check First Bet 100% Refund Promotion:
+        // RULE: "hoàn tiền vé cược đầu khi đánh trên 10k, ví dụ đánh 20k thua thì vẫn sẽ được hoàn lại tiền sau đó thì mọi thứ như bình thường"
+        if (user.firstBetRefundEligible && totalBet >= 10000) {
+          if (netWin < 0) {
+            // Player lost their qualifying first bet >= 10.000 ₫ -> 100% REFUND!
+            refundedAmount = Math.abs(netWin);
+            user.balance += refundedAmount;
+            netWin = 0; // Neutralized to 0 because money was refunded
+            isFirstBetRefunded = true;
+
+            // Record refund into deposit transaction list
+            if (!user.deposits) user.deposits = [];
+            user.deposits.unshift({
+              code: 'BẢO HIỂM HOÀN CƯỢC',
+              amount: refundedAmount,
+              bank: 'BẢO HIỂM TÂN THỦ 10K+',
+              stk: `PHIÊN #${STATE.sessionId}`,
+              time: new Date().toLocaleTimeString('vi-VN') + ' ' + new Date().toLocaleDateString('vi-VN'),
+              status: 'Thành Công'
+            });
+          }
+
+          // Promo is consumed after first qualifying bet >= 10k
+          user.firstBetRefundEligible = false;
+          user.hasUsedFirstBetRefund = true;
+        }
+
+        // Record to user's history
+        const historyEntry = {
+          id: STATE.sessionId,
+          dice: [d1, d2, d3],
+          total,
+          winner,
+          isTriple,
+          totalBet,
+          netWin,
+          isFirstBetRefunded,
+          refundedAmount,
+          betSummary: betItems.join(' | ')
+        };
+
+        if (!user.history) user.history = [];
+        user.history.unshift(historyEntry);
+        AUTH.save();
       }
 
-      // Record to user's history
-      const historyEntry = {
+      // Record to global history
+      STATE.globalHistory.unshift({
         id: STATE.sessionId,
         dice: [d1, d2, d3],
         total,
         winner,
-        isTriple,
-        totalBet,
-        netWin,
-        isFirstBetRefunded,
-        refundedAmount,
-        betSummary: betItems.join(' | ')
-      };
+        isTriple
+      });
 
-      if (!user.history) user.history = [];
-      user.history.unshift(historyEntry);
-      AUTH.save();
-    }
+      STATE.sessionId++;
+      el.sessionId.textContent = `#${STATE.sessionId}`;
 
-    // Record to global history
-    STATE.globalHistory.unshift({
-      id: STATE.sessionId,
-      dice: [d1, d2, d3],
-      total,
-      winner,
-      isTriple
-    });
+      updateAuthHeaderUI();
+      recalcStats();
 
-    STATE.sessionId++;
-    el.sessionId.textContent = `#${STATE.sessionId}`;
+      // Reset bets
+      Object.keys(STATE.bets).forEach(k => STATE.bets[k] = 0);
+      updateBetDisplays();
 
-    updateAuthHeaderUI();
-    recalcStats();
-
-    // Reset bets
-    Object.keys(STATE.bets).forEach(k => STATE.bets[k] = 0);
-    updateBetDisplays();
-
-    // Sound & Celebration
-    if (isFirstBetRefunded) {
-      window.soundEngine.playWin();
-      showFirstBetRefundModal(refundedAmount, totalBet);
-      showToast(`🛡️ BẢO HIỂM TÂN THỦ: Đã hoàn trả 100% tiền cược (+${formatMoney(refundedAmount)} ₫)!`, 5000);
-    } else if (netWin > 0) {
-      if (isTriple) {
-        window.soundEngine.playJackpot();
-      } else {
+      // Sound & Celebration
+      if (isFirstBetRefunded) {
         window.soundEngine.playWin();
-      }
+        showFirstBetRefundModal(refundedAmount, totalBet);
+        showToast(`🛡️ BẢO HIỂM TÂN THỦ: Đã hoàn trả 100% tiền cược (+${formatMoney(refundedAmount)} ₫)!`, 5000);
+      } else if (netWin > 0) {
+        if (isTriple) {
+          window.soundEngine.playJackpot();
+        } else {
+          window.soundEngine.playWin();
+        }
 
-      if (netWin >= 1000000) {
-        showWinModal(netWin, `${d1}+${d2}+${d3} = ${total} - ${winner}`);
-      } else {
-        showToast(`🎉 THẮNG CƯỢC: +${formatMoney(netWin)} ₫!`);
+        if (netWin >= 1000000) {
+          showWinModal(netWin, `${d1}+${d2}+${d3} = ${total} - ${winner}`);
+        } else {
+          showToast(`🎉 THẮNG CƯỢC: +${formatMoney(netWin)} ₫!`);
+        }
+      } else if (totalBet > 0 && netWin < 0) {
+        window.soundEngine.playLoss();
+        showToast(`Vận may sẽ đến ở phiên sau! (-${formatMoney(Math.abs(netWin))} ₫)`);
       }
-    } else if (totalBet > 0 && netWin < 0) {
-      window.soundEngine.playLoss();
-      showToast(`Vận may sẽ đến ở phiên sau! (-${formatMoney(Math.abs(netWin))} ₫)`);
+    } catch (err) {
+      console.error('Error during round finalization:', err);
     }
 
-    el.gameStatus.textContent = `Kết quả: ${d1}+${d2}+${d3}=${total} (${winner}) - Chuẩn bị ván mới`;
-    
-    // Automatically advance to the next hand after 5s
-    setTimeout(() => {
-      startSessionTimer();
-    }, 5000);
+    // Automatically advance to the next hand with active visual countdown
+    let advanceCountdown = 4;
+    el.gameStatus.textContent = `Kết quả: ${d1}+${d2}+${d3}=${total} (${winner}) - Chuẩn bị ván mới (${advanceCountdown}s)...`;
+    if (STATE.nextRoundTimerInterval) clearInterval(STATE.nextRoundTimerInterval);
+    STATE.nextRoundTimerInterval = setInterval(() => {
+      advanceCountdown--;
+      if (advanceCountdown > 0) {
+        el.gameStatus.textContent = `Kết quả: ${d1}+${d2}+${d3}=${total} (${winner}) - Chuẩn bị ván mới (${advanceCountdown}s)...`;
+      } else {
+        clearInterval(STATE.nextRoundTimerInterval);
+        STATE.nextRoundTimerInterval = null;
+        startSessionTimer();
+      }
+    }, 1000);
   }
 
   function showFirstBetRefundModal(refundAmount, betAmount) {
@@ -1984,6 +2005,20 @@
     el.btnCloseWinModal.addEventListener('click', () => {
       el.winModal.classList.remove('active');
     });
+    if (el.winModal) {
+      el.winModal.addEventListener('click', (e) => {
+        if (e.target === el.winModal) {
+          el.winModal.classList.remove('active');
+        }
+      });
+    }
+    if (el.firstBetRefundModal) {
+      el.firstBetRefundModal.addEventListener('click', (e) => {
+        if (e.target === el.firstBetRefundModal) {
+          el.firstBetRefundModal.classList.remove('active');
+        }
+      });
+    }
 
     setupCopyButtons();
 
