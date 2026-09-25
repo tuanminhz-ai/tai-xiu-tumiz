@@ -203,9 +203,9 @@
   };
 
   const DICE_TILTS = [
-    { x: -22, y: 24, z: -4 },
-    { x: -26, y: -20, z: 6 },
-    { x: -18, y: 30, z: -8 }
+    { x: 0, y: 0, z: 0 },
+    { x: 0, y: 0, z: 0 },
+    { x: 0, y: 0, z: 0 }
   ];
 
   let cumulativeSpins = [0, 0, 0];
@@ -761,15 +761,33 @@
     STATE.isRevealing = false;
     el.btnQuickOpen.style.display = 'none';
 
-    // Slide bowl off smoothly
+    // Slide bowl off smoothly in the direction of the drag (or upwards if opened via button/timer)
     window.soundEngine.playBowlOpen();
-    el.bowlOverlay.style.transition = 'transform 0.45s ease-out, opacity 0.45s';
-    el.bowlOverlay.style.transform = 'translate(0px, -240px)';
+    const dragDist = Math.hypot(currentX, currentY);
+    let flyX = 0;
+    let flyY = -240;
+    if (dragDist > 30) {
+      const scale = (dragDist + 200) / dragDist;
+      flyX = currentX * scale;
+      flyY = currentY * scale;
+    }
+
+    el.bowlOverlay.style.transition = 'transform 0.4s ease-out, opacity 0.4s ease-out';
+    el.bowlOverlay.style.transform = `translate(${flyX}px, ${flyY}px)`;
+    el.bowlOverlay.style.opacity = '0';
+
     setTimeout(() => {
       el.bowlOverlay.classList.remove('active');
       el.bowlOverlay.style.transition = '';
       el.bowlOverlay.style.transform = 'translate(0px, 0px)';
-    }, 500);
+      el.bowlOverlay.style.opacity = '';
+      if (el.bowlHint) {
+        el.bowlHint.textContent = '🖐️ Chạm & Kéo Bát Để Nặn';
+        el.bowlHint.style.background = '';
+      }
+      currentX = 0;
+      currentY = 0;
+    }, 450);
 
     // Evaluate Result
     const [d1, d2, d3] = STATE.currentDice;
@@ -1013,9 +1031,47 @@
   }
 
   // --- INTERACTIVE BOWL DRAGGING (NẶN BÁT) ---
+  // RULE: "KÉO ĐẾN KHI NÀO HẾT 3 VIÊN BI LỘ RA THÌ CÁI BÁT MỚI BIẾN MẤT"
   let isDraggingBowl = false;
   let startX = 0, startY = 0;
   let currentX = 0, currentY = 0;
+
+  function checkAllDiceRevealed() {
+    const bowl = el.bowlOverlay;
+    if (!bowl) return { allRevealed: false, revealedCount: 0 };
+
+    const bowlRect = bowl.getBoundingClientRect();
+    const bowlCenterX = bowlRect.left + bowlRect.width / 2;
+    const bowlCenterY = bowlRect.top + bowlRect.height / 2;
+    // Effective radius of the circular bowl (0.90 gives natural visual clearance)
+    const bowlRadius = (bowlRect.width / 2) * 0.90;
+
+    const diceList = [el.dice1, el.dice2, el.dice3];
+    let revealedCount = 0;
+
+    diceList.forEach(dice => {
+      if (!dice) return;
+      const dRect = dice.getBoundingClientRect();
+      // Find closest point on this dice bounding box to bowl center
+      const closestX = Math.max(dRect.left, Math.min(bowlCenterX, dRect.right));
+      const closestY = Math.max(dRect.top, Math.min(bowlCenterY, dRect.bottom));
+      const distSq = (bowlCenterX - closestX) ** 2 + (bowlCenterY - closestY) ** 2;
+
+      // If the closest point on the dice is further than bowl radius, this die is fully uncovered
+      if (distSq > bowlRadius * bowlRadius) {
+        revealedCount++;
+      }
+    });
+
+    const dragDist = Math.hypot(currentX, currentY);
+    // All 3 dice are uncovered, OR the bowl was dragged completely clear off the dish (> 230px)
+    const allRevealed = (revealedCount === 3) || (dragDist >= 230);
+
+    return {
+      allRevealed,
+      revealedCount
+    };
+  }
 
   function initBowlDrag() {
     const bowl = el.bowlOverlay;
@@ -1026,7 +1082,8 @@
       startX = e.clientX - currentX;
       startY = e.clientY - currentY;
       bowl.classList.add('dragging');
-      bowl.setPointerCapture(e.pointerId);
+      bowl.style.transition = 'none';
+      try { bowl.setPointerCapture(e.pointerId); } catch (err) {}
     });
 
     bowl.addEventListener('pointermove', (e) => {
@@ -1035,30 +1092,65 @@
       currentY = e.clientY - startY;
 
       bowl.style.transform = `translate(${currentX}px, ${currentY}px)`;
-      const dist = Math.hypot(currentX, currentY);
 
-      if (dist > 120) {
+      const check = checkAllDiceRevealed();
+
+      // RULE: "KÉO ĐẾN KHI NÀO HẾT 3 VIÊN BI LỘ RA THÌ CÁI BÁT MỚI BIẾN MẤT"
+      if (check.allRevealed) {
         isDraggingBowl = false;
         bowl.classList.remove('dragging');
+        try { bowl.releasePointerCapture(e.pointerId); } catch (err) {}
         finishRound();
-        currentX = 0; currentY = 0;
+        return;
+      }
+
+      // Live feedback so player feels the suspense of peeking each die
+      if (check.revealedCount === 0) {
+        el.bowlHint.textContent = '🖐️ Kéo bát để nặn kết quả';
+        el.bowlHint.style.background = '';
+      } else if (check.revealedCount === 1) {
+        el.bowlHint.textContent = '👀 Đã hé 1 viên! Kéo tiếp...';
+        el.bowlHint.style.background = 'rgba(59, 130, 246, 0.75)';
+      } else if (check.revealedCount === 2) {
+        el.bowlHint.textContent = '🔥 Đã hé 2 viên! Kéo mở viên cuối...';
+        el.bowlHint.style.background = 'rgba(245, 158, 11, 0.85)';
       }
     });
 
-    const stopDrag = () => {
+    const stopDrag = (e) => {
       if (!isDraggingBowl) return;
       isDraggingBowl = false;
       bowl.classList.remove('dragging');
 
-      const dist = Math.hypot(currentX, currentY);
-      if (dist > 80) {
+      try {
+        if (e && e.pointerId && bowl.hasPointerCapture(e.pointerId)) {
+          bowl.releasePointerCapture(e.pointerId);
+        }
+      } catch (err) {}
+
+      const check = checkAllDiceRevealed();
+      if (check.allRevealed) {
         finishRound();
-        currentX = 0; currentY = 0;
       } else {
-        bowl.style.transition = 'transform 0.3s ease-out';
-        bowl.style.transform = 'translate(0px, 0px)';
-        currentX = 0; currentY = 0;
-        setTimeout(() => bowl.style.transition = '', 300);
+        // If not all 3 dice are exposed:
+        // Do NOT make bowl disappear!
+        // If movement was minimal (< 25px), snap back to center
+        const dist = Math.hypot(currentX, currentY);
+        if (dist < 25) {
+          bowl.style.transition = 'transform 0.25s ease-out';
+          bowl.style.transform = 'translate(0px, 0px)';
+          currentX = 0;
+          currentY = 0;
+          setTimeout(() => {
+            if (!isDraggingBowl) bowl.style.transition = '';
+          }, 250);
+          el.bowlHint.textContent = '🖐️ Chạm & Kéo Bát Để Nặn';
+          el.bowlHint.style.background = '';
+        } else {
+          // Keep bowl where user left it so they can see revealed dice,
+          // and re-grab to pull further!
+          el.bowlHint.textContent = `⚡ Còn ${3 - check.revealedCount} viên chưa hé! Kéo tiếp...`;
+        }
       }
     };
 
